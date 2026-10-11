@@ -1,11 +1,15 @@
 import { Component, input } from '@angular/core';
 
-export interface DataTableColumn<T> { key: keyof T; label: string; }
+export interface DataTableColumn<T> {
+  key: keyof T;
+  label: string;
+}
 
 @Component({
   selector: 'app-data-table',
   standalone: true,
   templateUrl: './data-table.html',
+  styleUrl: './data-table.scss',
 })
 export class DataTable<T extends object> {
   readonly columns = input.required<DataTableColumn<T>[]>();

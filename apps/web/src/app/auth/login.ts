@@ -3,20 +3,49 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from './auth.service';
 
-@Component({ standalone: true, imports: [ReactiveFormsModule, RouterLink], template: `
-<main class="grid min-h-screen lg:grid-cols-2"><section class="flex items-center justify-center px-6 py-12 sm:px-12"><div class="w-full max-w-md">
-<a routerLink="/login" class="inline-flex items-center gap-3 rounded-xl text-lg font-bold"><span class="grid h-10 w-10 place-items-center rounded-2xl bg-primary-800 text-white">P</span>Points Card</a>
-<div class="mt-12"><p class="text-sm font-semibold uppercase tracking-[.18em] text-primary-800">Bienvenido de nuevo</p><h1 class="mt-3 text-3xl font-semibold sm:text-4xl">Inicia sesión</h1><p class="mt-3 text-slate-700">Administra la lealtad de tu negocio desde un solo lugar.</p></div>
-<form class="mt-9 space-y-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-<div><label for="email" class="mb-2 block text-sm font-semibold">Correo electrónico</label><input id="email" type="email" autocomplete="email" formControlName="email" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3" placeholder="tu@negocio.com" aria-describedby="email-error">@if (message('email')) {<p id="email-error" class="mt-1 text-sm text-red-700" role="alert">{{ message('email') }}</p>}</div>
-<div><label for="password" class="mb-2 block text-sm font-semibold">Contraseña</label><input id="password" type="password" autocomplete="current-password" formControlName="password" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3" placeholder="Tu contraseña" aria-describedby="password-error">@if (message('password')) {<p id="password-error" class="mt-1 text-sm text-red-700" role="alert">{{ message('password') }}</p>}</div>
-@if (error()) {<p class="rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{{ error() }}</p>}<button class="w-full rounded-xl bg-primary-800 px-5 py-3.5 font-semibold text-white disabled:opacity-60" type="submit" [disabled]="loading()">{{ loading() ? 'Iniciando sesión…' : 'Iniciar sesión' }}</button></form>
-<p class="mt-7 text-center text-sm text-slate-700">¿Aún no tienes cuenta? <a routerLink="/registro" class="font-semibold text-primary-800 underline">Registra tu negocio</a></p><p class="mt-10 text-center text-xs text-slate-600">Acceso seguro para tu equipo</p></div></section>
-<aside class="hidden flex-col justify-between bg-primary-800 px-12 py-16 text-white lg:flex"><span class="w-fit rounded-full border border-white/30 px-4 py-2 text-sm">Lealtad que crece contigo</span><div class="max-w-xl"><p class="text-sm font-semibold uppercase tracking-[.2em] text-teal-100">Points Card</p><h2 class="mt-5 text-4xl font-semibold leading-tight">Haz que cada visita cuente.</h2><p class="mt-5 text-lg leading-8 text-teal-50">Una experiencia sencilla para cuidar a tus clientes y fortalecer tu comunidad.</p></div><p class="text-sm text-teal-100">Tu programa de lealtad, en buenas manos.</p></aside></main>` })
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, RouterLink],
+  templateUrl: './login.html',
+  styleUrl: './login.scss',
+})
 export class Login {
-  private readonly fb = inject(FormBuilder); private readonly auth = inject(AuthService); private readonly router = inject(Router);
-  readonly loading = signal(false); readonly error = signal(''); readonly submitted = signal(false);
-  readonly form = this.fb.nonNullable.group({ email: ['', [Validators.required, Validators.email]], password: ['', Validators.required] });
-  message(field: 'email'|'password'): string { const control = this.form.controls[field]; if (!control.invalid || (!control.touched && !this.submitted())) return ''; return control.hasError('required') ? (field === 'email' ? 'El correo electrónico es obligatorio.' : 'La contraseña es obligatoria.') : 'Ingresa un correo electrónico válido.'; }
-  submit() { this.submitted.set(true); this.error.set(''); if (this.form.invalid) { this.form.markAllAsTouched(); return; } this.loading.set(true); this.auth.login(this.form.getRawValue()).subscribe({ next: () => { this.loading.set(false); void this.router.navigateByUrl('/'); }, error: (e: { error?: { message?: string } }) => { this.loading.set(false); this.error.set(e.error?.message ?? 'No fue posible iniciar sesión. Inténtalo de nuevo.'); } }); }
+  private readonly fb = inject(FormBuilder);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly loading = signal(false);
+  readonly error = signal('');
+  readonly submitted = signal(false);
+  readonly form = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
+  message(field: 'email' | 'password'): string {
+    const control = this.form.controls[field];
+    if (!control.invalid || (!control.touched && !this.submitted())) return '';
+    return control.hasError('required')
+      ? field === 'email'
+        ? 'El correo electrónico es obligatorio.'
+        : 'La contraseña es obligatoria.'
+      : 'Ingresa un correo electrónico válido.';
+  }
+  submit() {
+    this.submitted.set(true);
+    this.error.set('');
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.loading.set(true);
+    this.auth.login(this.form.getRawValue()).subscribe({
+      next: () => {
+        this.loading.set(false);
+        void this.router.navigateByUrl('/');
+      },
+      error: (e: { error?: { message?: string } }) => {
+        this.loading.set(false);
+        this.error.set(e.error?.message ?? 'No fue posible iniciar sesión. Inténtalo de nuevo.');
+      },
+    });
+  }
 }

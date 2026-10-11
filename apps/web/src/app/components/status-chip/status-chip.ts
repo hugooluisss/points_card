@@ -6,6 +6,7 @@ export type StatusVariant = 'in-progress' | 'completed' | 'failed';
   selector: 'app-status-chip',
   standalone: true,
   templateUrl: './status-chip.html',
+  styleUrl: './status-chip.scss',
 })
 export class StatusChip {
   readonly variant = input.required<StatusVariant>();

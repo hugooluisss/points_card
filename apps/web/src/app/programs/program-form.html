@@ -1,0 +1,181 @@
+<main class="mx-auto max-w-3xl px-4 py-8 sm:px-8">
+  <a
+    routerLink="/programas"
+    class="rounded text-sm font-semibold text-teal-800 focus-visible:outline-2"
+    >← Volver a programas</a
+  >
+  <div class="mt-5">
+    <p class="text-sm font-medium text-slate-500">Configuración</p>
+    <h1 class="mt-1 text-3xl font-semibold tracking-tight">
+      {{ id ? 'Editar programa' : 'Crear programa' }}
+    </h1>
+    <p class="mt-2 text-slate-600">Elige cómo tus clientes ganan recompensas.</p>
+  </div>
+  @if (loading()) {
+    <p role="status" class="mt-6 rounded-2xl bg-white p-6">Cargando programa…</p>
+  } @else if (loadError()) {
+    <p role="alert" class="mt-6 rounded-2xl bg-white p-6 text-red-700">
+      {{ loadError() }} <a routerLink="/programas" class="underline">Volver a programas</a>
+    </p>
+  } @else {
+    <form class="mt-7 space-y-5" (ngSubmit)="save()" novalidate>
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <h2 class="text-lg font-semibold">Información básica</h2>
+        <div class="mt-5 space-y-5">
+          <div>
+            <label for="name" class="mb-2 block text-sm font-semibold">Nombre del programa</label
+            ><input
+              id="name"
+              name="name"
+              [(ngModel)]="name"
+              (blur)="submitted.set(true)"
+              required
+              maxlength="100"
+              class="w-full rounded-xl border border-slate-300 px-4 py-3 focus-visible:outline-2 focus-visible:outline-teal-700"
+            />
+            <p class="text-sm text-red-700">
+              {{ submitted() && !name.trim() ? 'Escribe el nombre del programa.' : '' }}
+            </p>
+          </div>
+          <fieldset>
+            <legend class="mb-3 text-sm font-semibold">Modalidad</legend>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label
+                class="flex cursor-pointer items-start gap-3 rounded-xl border p-4"
+                [class.border-teal-700]="mode === 'stamps'"
+                ><input
+                  type="radio"
+                  name="mode"
+                  [(ngModel)]="mode"
+                  value="stamps"
+                  [disabled]="!!id"
+                  class="mt-1 accent-teal-800"
+                /><span
+                  ><strong class="block">Sellos</strong
+                  ><span class="text-sm text-slate-600">Premia las visitas frecuentes.</span></span
+                ></label
+              ><label
+                class="flex cursor-pointer items-start gap-3 rounded-xl border p-4"
+                [class.border-teal-700]="mode === 'points'"
+                ><input
+                  type="radio"
+                  name="mode"
+                  [(ngModel)]="mode"
+                  value="points"
+                  [disabled]="!!id"
+                  class="mt-1 accent-teal-800"
+                /><span
+                  ><strong class="block">Puntos</strong
+                  ><span class="text-sm text-slate-600">Acumula según el importe.</span></span
+                ></label
+              >
+            </div>
+            @if (id) {
+              <p class="mt-2 text-sm text-slate-500">
+                La modalidad no se puede cambiar después de crear el programa.
+              </p>
+            }
+          </fieldset>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="from" class="mb-2 block text-sm font-semibold">Vigente desde</label
+              ><input
+                id="from"
+                name="validFrom"
+                type="date"
+                [(ngModel)]="validFrom"
+                required
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 focus-visible:outline-2"
+              />
+              <p class="text-sm text-red-700">
+                {{ submitted() && !validFrom ? 'Indica la fecha de inicio.' : '' }}
+              </p>
+            </div>
+            <div>
+              <label for="until" class="mb-2 block text-sm font-semibold"
+                >Vigencia hasta <span class="font-normal text-slate-500">(opcional)</span></label
+              ><input
+                id="until"
+                name="validUntil"
+                type="date"
+                [(ngModel)]="validUntil"
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 focus-visible:outline-2"
+              />
+              <p class="text-sm text-red-700">
+                {{
+                  submitted() && validUntil && validUntil < validFrom
+                    ? 'La fecha de término debe ser igual o posterior al inicio.'
+                    : ''
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <h2 class="text-lg font-semibold">
+          Regla de {{ mode === 'stamps' ? 'sellos' : 'puntos' }}
+        </h2>
+        <p class="mt-1 text-sm text-slate-600">
+          {{
+            mode === 'stamps'
+              ? 'Cada operación válida agrega un sello.'
+              : 'Define cuántos puntos gana cada cliente con su compra.'
+          }}
+        </p>
+        <div class="mt-5 max-w-sm">
+          <label
+            [for]="mode === 'stamps' ? 'goal' : 'rate'"
+            class="mb-2 block text-sm font-semibold"
+            >{{
+              mode === 'stamps' ? 'Sellos para alcanzar la meta' : 'Puntos por unidad monetaria'
+            }}</label
+          ><input
+            [id]="mode === 'stamps' ? 'goal' : 'rate'"
+            [name]="mode === 'stamps' ? 'goal' : 'rate'"
+            type="number"
+            [min]="mode === 'stamps' ? 1 : 0.0001"
+            [step]="mode === 'stamps' ? 1 : 0.0001"
+            [(ngModel)]="ruleValue"
+            required
+            class="w-full rounded-xl border border-slate-300 px-4 py-3 focus-visible:outline-2"
+          />
+          <p class="text-sm text-red-700">
+            {{
+              submitted() &&
+              (!ruleValue || ruleValue <= 0 || (mode === 'stamps' && !Number.isInteger(ruleValue)))
+                ? mode === 'stamps'
+                  ? 'La meta debe ser un entero mayor que cero.'
+                  : 'La tasa debe ser mayor que cero.'
+                : ''
+            }}
+          </p>
+        </div>
+        @if (mode === 'points') {
+          <p class="mt-4 rounded-xl bg-teal-50 p-4 text-sm text-teal-950">
+            Vista previa: una compra de $250 suma
+            <strong>{{ 250 * (ruleValue || 0) }} puntos</strong>.
+          </p>
+        }
+      </section>
+      <app-anti-fraud-controls
+        [fraud]="fraud()"
+        [submitted]="submitted()"
+        (fraudUpdated)="fraud.set($event)"
+      />
+      <p role="alert" class="text-sm text-red-700">{{ error() }}</p>
+      <div class="flex flex-col-reverse justify-end gap-3 sm:flex-row">
+        <a
+          routerLink="/programas"
+          class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-center text-sm font-semibold"
+          >Cancelar</a
+        ><button
+          [disabled]="saving()"
+          class="rounded-xl bg-teal-800 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {{ saving() ? 'Guardando…' : 'Guardar programa' }}
+        </button>
+      </div>
+    </form>
+  }
+</main>

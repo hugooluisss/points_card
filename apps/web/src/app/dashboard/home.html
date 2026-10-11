@@ -1,0 +1,78 @@
+<main class="mx-auto max-w-[1500px] px-4 py-7 sm:px-7 sm:py-9 lg:px-9">
+  <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="text-sm font-medium text-slate-600">Resumen del negocio</p>
+      <h1 class="mt-1 text-3xl font-semibold tracking-tight">Hola, equipo</h1>
+      <p class="mt-2 text-slate-700">Aquí tienes la actividad de tu programa de lealtad.</p>
+    </div>
+    <span
+      class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
+      >Últimos 30 días</span
+    >
+  </div>
+  <section aria-label="Indicadores principales" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <app-kpi-card
+      title="Clientes"
+      value="—"
+      delta="Comienza invitando a tus clientes."
+      color="peach"
+    />
+    <app-kpi-card
+      title="Movimientos"
+      value="—"
+      delta="Aparecerán al iniciar la operación."
+      color="green"
+    />
+    <app-kpi-card
+      title="Canjes"
+      value="—"
+      delta="Aquí verás las recompensas canjeadas."
+      color="blue"
+    />
+    <app-kpi-card
+      title="Programas activos"
+      value="—"
+      delta="Configura tu primer programa."
+      color="mint"
+    />
+  </section>
+  <section class="mt-5 grid gap-5 xl:grid-cols-[1.35fr_.85fr]">
+    <article class="rounded-2xl bg-primary-800 p-6 text-white sm:p-7">
+      <p class="text-sm text-teal-100">Actividad del programa</p>
+      <h2 class="mt-1 text-2xl font-semibold">Movimientos</h2>
+      <div
+        class="mt-7 grid min-h-48 place-items-center rounded-xl border border-white/20 text-center"
+      >
+        <p>
+          <span class="block text-lg font-semibold">Aún no hay actividad</span>
+          <span class="mt-2 block text-sm text-teal-100"
+            >Los datos aparecerán cuando tu equipo comience a atender clientes.</span
+          >
+        </p>
+      </div>
+    </article>
+    <article class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
+      <p class="text-sm text-slate-600">Tu programa</p>
+      <h2 class="mt-1 text-xl font-semibold">Siguiente paso</h2>
+      <p class="mt-5 text-sm leading-6 text-slate-700">
+        Configura tu primer programa para empezar a sumar clientes y movimientos.
+      </p>
+      <a
+        routerLink="/programas"
+        class="mt-5 inline-flex rounded-xl bg-primary-800 px-4 py-2.5 text-sm font-semibold text-white"
+        >Crear un programa →</a
+      >
+    </article>
+  </section>
+  <section class="mt-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
+    <p class="text-sm text-slate-600">Lo más reciente</p>
+    <h2 class="mt-1 text-xl font-semibold">Actividad reciente</h2>
+    <div class="mt-5 rounded-xl bg-slate-50 p-5">
+      <p class="font-semibold">Aún no hay actividad</p>
+      <p class="mt-1 text-sm text-slate-700">
+        Cuando tus clientes participen, verás aquí sus movimientos.
+      </p>
+    </div>
+  </section>
+  <footer class="py-7 text-center text-xs text-slate-600">Points Card · Panel de lealtad</footer>
+</main>

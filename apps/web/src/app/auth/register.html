@@ -1,0 +1,123 @@
+<main class="grid min-h-screen lg:grid-cols-[.85fr_1.15fr]">
+  <aside class="hidden flex-col justify-between bg-primary-800 px-12 py-16 text-white lg:flex">
+    <a
+      routerLink="/login"
+      class="inline-flex w-fit items-center gap-3 rounded-xl text-lg font-bold"
+    >
+      <span class="grid h-10 w-10 place-items-center rounded-2xl bg-white text-primary-800">P</span
+      >Points Card</a
+    >
+    <div class="max-w-lg">
+      <p class="text-sm font-semibold uppercase tracking-[.2em] text-teal-100">Empieza hoy</p>
+      <h1 class="mt-5 text-4xl font-semibold leading-tight">Construye relaciones que duran.</h1>
+      <p class="mt-5 text-lg leading-8 text-teal-50">
+        Configura la base de tu programa y dale a cada cliente un motivo para volver.
+      </p>
+    </div>
+    <p class="text-sm text-teal-100">Simple para tu equipo. Especial para tus clientes.</p>
+  </aside>
+  <section class="flex items-center justify-center px-6 py-10 sm:px-12">
+    <div class="w-full max-w-xl">
+      <a
+        routerLink="/login"
+        class="inline-flex items-center gap-3 rounded-xl text-lg font-bold lg:hidden"
+      >
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-primary-800 text-white"
+          >P</span
+        >Points Card</a
+      >
+      <div class="mt-9 lg:mt-0">
+        <p class="text-sm font-semibold uppercase tracking-[.18em] text-primary-800">
+          Nuevo comercio
+        </p>
+        <h2 class="mt-3 text-3xl font-semibold">Registra tu negocio</h2>
+        <p class="mt-3 text-slate-700">Crea la cuenta de administración para comenzar.</p>
+      </div>
+      <form
+        class="mt-7 grid gap-4 sm:grid-cols-2"
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        novalidate
+      >
+        @for (field of fields; track field.name) {
+          <div [class.sm:col-span-2]="field.wide">
+            <label [for]="field.name" class="mb-2 block text-sm font-semibold">{{
+              field.label
+            }}</label>
+            <input
+              [id]="field.name"
+              [type]="field.type"
+              [autocomplete]="field.autocomplete"
+              [placeholder]="field.placeholder"
+              [formControlName]="field.name"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+            />
+            @if (message(field.name)) {
+              <p class="mt-1 text-sm text-red-700" role="alert">{{ message(field.name) }}</p>
+            }
+          </div>
+        }
+        <div>
+          <label for="password" class="mb-2 block text-sm font-semibold">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            autocomplete="new-password"
+            formControlName="password"
+            placeholder="Mínimo 8 caracteres"
+            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+          />
+          @if (message('password')) {
+            <p class="mt-1 text-sm text-red-700" role="alert">{{ message('password') }}</p>
+          }
+        </div>
+        <div>
+          <label for="confirmPassword" class="mb-2 block text-sm font-semibold"
+            >Confirma contraseña</label
+          >
+          <input
+            id="confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            formControlName="confirmPassword"
+            placeholder="Repite tu contraseña"
+            class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+          />
+          @if (message('confirmPassword')) {
+            <p class="mt-1 text-sm text-red-700" role="alert">{{ message('confirmPassword') }}</p>
+          }
+        </div>
+        <div class="sm:col-span-2">
+          <label for="terms" class="flex items-start gap-3 text-sm leading-6 text-slate-700">
+            <input
+              id="terms"
+              type="checkbox"
+              formControlName="terms"
+              class="mt-1 h-4 w-4 accent-primary-800"
+            />
+            <span>Acepto los términos de servicio y la política de privacidad.</span>
+          </label>
+          @if (message('terms')) {
+            <p class="mt-1 text-sm text-red-700" role="alert">{{ message('terms') }}</p>
+          }
+        </div>
+        @if (error()) {
+          <p class="sm:col-span-2 rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">
+            {{ error() }}
+          </p>
+        }
+        <button
+          type="submit"
+          [disabled]="loading()"
+          class="sm:col-span-2 rounded-xl bg-primary-800 px-5 py-3.5 font-semibold text-white disabled:opacity-60"
+        >
+          {{ loading() ? 'Creando cuenta…' : 'Crear cuenta de negocio' }}
+        </button>
+      </form>
+      <p class="mt-6 text-center text-sm text-slate-700">
+        ¿Ya tienes cuenta?
+        <a routerLink="/login" class="font-semibold text-primary-800 underline">Inicia sesión</a>
+      </p>
+    </div>
+  </section>
+</main>

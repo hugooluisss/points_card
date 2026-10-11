@@ -21,14 +21,35 @@ const groups: SidebarGroup[] = [
   },
   {
     label: 'Administración',
-    items: [{ label: 'Configuración', icon: '⚙', href: '/configuracion' }],
+    items: [
+      { label: 'Sincronización', icon: '⟳', href: '/sincronizacion' },
+      { label: 'Configuración', icon: '⚙', href: '/configuracion' },
+    ],
   },
 ];
 
 export function menuForRole(role: Role): SidebarGroup[] {
   const allowed: Record<Role, string[]> = {
-    [Role.Owner]: ['Inicio', 'Clientes', 'Movimientos', 'Canjes', 'Escáner', 'Programas', 'Configuración'],
-    [Role.Manager]: ['Inicio', 'Clientes', 'Movimientos', 'Canjes', 'Escáner', 'Programas', 'Configuración'],
+    [Role.Owner]: [
+      'Inicio',
+      'Clientes',
+      'Movimientos',
+      'Canjes',
+      'Escáner',
+      'Programas',
+      'Sincronización',
+      'Configuración',
+    ],
+    [Role.Manager]: [
+      'Inicio',
+      'Clientes',
+      'Movimientos',
+      'Canjes',
+      'Escáner',
+      'Programas',
+      'Sincronización',
+      'Configuración',
+    ],
     [Role.Cashier]: ['Inicio', 'Clientes', 'Movimientos', 'Canjes', 'Escáner'],
   };
 
@@ -41,5 +62,7 @@ export function menuForRole(role: Role): SidebarGroup[] {
 }
 
 export function rolesForMenuItem(label: string): Role[] {
-  return Object.values(Role).filter((role) => menuForRole(role).some((group) => group.items.some((item) => item.label === label)));
+  return Object.values(Role).filter((role) =>
+    menuForRole(role).some((group) => group.items.some((item) => item.label === label)),
+  );
 }

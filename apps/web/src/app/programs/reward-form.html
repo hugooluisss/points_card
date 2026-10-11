@@ -1,0 +1,76 @@
+<form
+  class="mt-6 grid gap-4 rounded-2xl border bg-white p-5 sm:grid-cols-2"
+  (ngSubmit)="save.emit()"
+  novalidate
+>
+  <h2 class="text-lg font-semibold sm:col-span-2">
+    {{ editing() === 'new' ? 'Nueva recompensa' : 'Editar recompensa' }}
+  </h2>
+  <div>
+    <label for="rname" class="mb-1 block text-sm font-semibold">Nombre</label>
+    <input
+      id="rname"
+      name="rname"
+      [ngModel]="name()"
+      (ngModelChange)="nameChange.emit($event)"
+      required
+      class="w-full rounded-xl border px-3 py-2.5 focus-visible:outline-2"
+    />
+    <p class="text-sm text-red-700">
+      {{ submitted() && !name().trim() ? 'Escribe el nombre de la recompensa.' : '' }}
+    </p>
+  </div>
+  <div>
+    <label for="cost" class="mb-1 block text-sm font-semibold"
+      >Costo ({{ mode() === 'stamps' ? 'sellos' : 'puntos' }})</label
+    >
+    <input
+      id="cost"
+      name="cost"
+      type="number"
+      min="1"
+      step="1"
+      [ngModel]="cost()"
+      (ngModelChange)="costChange.emit($event)"
+      required
+      class="w-full rounded-xl border px-3 py-2.5 focus-visible:outline-2"
+    />
+    <p class="text-sm text-red-700">
+      {{
+        submitted() &&
+        (!Number.isInteger(Number(cost())) ||
+          cost() < 1 ||
+          (mode() === 'stamps' && cost() > (stampsGoal() ?? 0)))
+          ? mode() === 'stamps' && cost() > (stampsGoal() ?? 0)
+            ? 'El costo no puede superar la meta de sellos del programa.'
+            : 'El costo debe ser un entero mayor que cero.'
+          : ''
+      }}
+    </p>
+  </div>
+  <div class="sm:col-span-2">
+    <label for="conditions" class="mb-1 block text-sm font-semibold"
+      >Condiciones <span class="font-normal text-slate-500">(opcional)</span></label
+    >
+    <textarea
+      id="conditions"
+      name="conditions"
+      [ngModel]="conditions()"
+      (ngModelChange)="conditionsChange.emit($event)"
+      rows="2"
+      class="w-full rounded-xl border px-3 py-2.5 focus-visible:outline-2"
+    ></textarea>
+  </div>
+  <p role="alert" class="text-sm text-red-700 sm:col-span-2">{{ saveError() }}</p>
+  <div class="flex gap-3 sm:col-span-2">
+    <button
+      [disabled]="saving()"
+      class="rounded-xl bg-teal-800 px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+    >
+      Guardar
+    </button>
+    <button type="button" class="rounded-xl border px-4 py-2.5" (click)="cancel.emit()">
+      Cancelar
+    </button>
+  </div>
+</form>

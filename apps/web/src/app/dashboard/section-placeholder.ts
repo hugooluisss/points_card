@@ -4,7 +4,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 @Component({
   standalone: true,
   imports: [RouterLink],
-  template: `<main class="mx-auto max-w-[1500px] px-4 py-7 sm:px-7 sm:py-9 lg:px-9"><section class="rounded-2xl border border-slate-200 bg-white p-7"><h1 class="text-3xl font-semibold tracking-tight">{{ title }}</h1><p class="mt-3 text-slate-700">Esta sección estará disponible en una próxima fase.</p><a routerLink="/" class="mt-5 inline-flex rounded-xl bg-primary-800 px-4 py-2.5 text-sm font-semibold text-white">Volver a Inicio</a></section></main>`,
+  templateUrl: './section-placeholder.html',
+  styleUrl: './section-placeholder.scss',
 })
 export class SectionPlaceholder {
   readonly title = inject(ActivatedRoute).snapshot.data['title'] as string;

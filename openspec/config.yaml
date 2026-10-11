@@ -26,6 +26,21 @@ context: |
   - Repository: all data access; applies the tenant (business) scope to every query.
   - Wallet providers (Apple, Google) sit behind one interface.
 
+  Code organization (mandatory, single responsibility, one responsibility per file):
+  - Frontend, per Angular component: <name>.ts (controller/logic only), <name>.html
+    (view), <name>.css (component styles; Tailwind utilities stay in the html) and
+    <name>.spec.ts. No inline template/styles. One component, service, guard,
+    interceptor or pipe per file; HTTP access lives in a service, never in a component.
+  - Backend: one class per file (controller, service, repository, entity, DTO,
+    guard, interceptor, strategy, module each in its own file; DTOs under dto/,
+    entities under entities/). A service has one cohesive responsibility; split
+    services that mix several use cases (e.g. accumulate, redeem, adjust/reverse and
+    card lookup are different services). Pure helpers (day bounds, card state)
+    live in their own small files with their own spec.
+  - Tests sit next to the file they test (<name>.spec.ts), one spec per unit.
+  - At the end of each phase, after tests pass and no agent is editing, run the
+    format-code skill (prettier) and re-run the tests.
+
   Phases: F0 wallet validation (gate) -> F1 core/tenancy/auth -> F2 stamps & points
   -> F3 customer onboarding -> F4 dashboard -> F5 billing (Stripe) -> F6 club & campaigns.
   One OpenSpec change per phase.

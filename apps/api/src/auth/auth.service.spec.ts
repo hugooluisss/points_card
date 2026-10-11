@@ -4,6 +4,8 @@ import * as argon2 from "argon2";
 import { Role } from "@points-card/shared";
 import { AuthRepository } from "./auth.repository";
 import { AuthService } from "./auth.service";
+import { TokenService } from "./token.service";
+import { LoginRateLimiter } from "./login-rate-limiter";
 
 describe("AuthService", () => {
   const config = new ConfigService({
@@ -50,7 +52,11 @@ describe("AuthService", () => {
           item.revokedAt ??= new Date();
       }),
     } as unknown as AuthRepository;
-    const auth = new AuthService(repository, config, jwt);
+    const auth = new AuthService(
+      repository,
+      new TokenService(repository, config, jwt),
+      new LoginRateLimiter(),
+    );
     const first = await auth.login(
       staff.email,
       "correct-password",
@@ -81,7 +87,11 @@ describe("AuthService", () => {
     const repository = {
       findStaffByEmail: jest.fn().mockResolvedValue(null),
     } as unknown as AuthRepository;
-    const auth = new AuthService(repository, config, jwt);
+    const auth = new AuthService(
+      repository,
+      new TokenService(repository, config, jwt),
+      new LoginRateLimiter(),
+    );
     for (let attempt = 0; attempt < 5; attempt++)
       await expect(
         auth.login("bad@example.test", "wrong", "192.0.2.1"),
@@ -101,16 +111,13 @@ describe("AuthService", () => {
         isActive: false,
       }),
     } as unknown as AuthRepository;
-    const auth = new AuthService(repository, config, jwt);
+    const auth = new AuthService(
+      repository,
+      new TokenService(repository, config, jwt),
+      new LoginRateLimiter(),
+    );
     await expect(
       auth.login(staff.email, "wrong-password", "192.0.2.2"),
     ).rejects.toMatchObject({ status: 401 });
-    const token = await jwt.signAsync(
-      { sub: staff.id, businessId: staff.businessId },
-      { secret: "a".repeat(40), algorithm: "HS384", expiresIn: "15m" },
-    );
-    await expect(auth.verifyAccess(token)).rejects.toMatchObject({
-      status: 401,
-    });
   });
 });

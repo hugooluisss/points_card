@@ -13,6 +13,25 @@ describe("database migrations", () => {
     );
     await dataSource.initialize();
     try {
+      const loyaltyApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateLoyaltyPrograms1760000003000'",
+      );
+      const ledgerApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateLoyaltyLedger1760000004000'",
+      );
+      const fraudApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'AddFraudControls1760000005000'",
+      );
+      const walletSyncApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateWalletSyncJobs1760000006000'",
+      );
+      if (walletSyncApplied.length) await dataSource.undoLastMigration();
+      if (fraudApplied.length) await dataSource.undoLastMigration();
+      const ledgerAppliedNow = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateLoyaltyLedger1760000004000'",
+      );
+      if (ledgerAppliedNow.length) await dataSource.undoLastMigration();
+      if (loyaltyApplied.length) await dataSource.undoLastMigration();
       const authApplied = await dataSource.query(
         "SELECT name FROM migrations WHERE name = 'CreateAuthAndAudit1760000002000'",
       );
@@ -47,6 +66,27 @@ describe("database migrations", () => {
       expect(await dataSource.query("SHOW TABLES LIKE 'rewards'")).toHaveLength(
         1,
       );
+      expect(
+        await dataSource.query("SHOW TABLES LIKE 'loyalty_accounts'"),
+      ).toHaveLength(1);
+      expect(
+        await dataSource.query("SHOW TABLES LIKE 'loyalty_transactions'"),
+      ).toHaveLength(1);
+      expect(
+        await dataSource.query("SHOW TABLES LIKE 'redemptions'"),
+      ).toHaveLength(1);
+      await dataSource.undoLastMigration();
+      await dataSource.undoLastMigration();
+      await dataSource.undoLastMigration();
+      expect(
+        await dataSource.query("SHOW TABLES LIKE 'loyalty_accounts'"),
+      ).toHaveLength(0);
+      expect(
+        await dataSource.query("SHOW TABLES LIKE 'loyalty_transactions'"),
+      ).toHaveLength(0);
+      expect(
+        await dataSource.query("SHOW TABLES LIKE 'redemptions'"),
+      ).toHaveLength(0);
       await dataSource.undoLastMigration();
       expect(
         await dataSource.query("SHOW TABLES LIKE 'programs'"),
@@ -97,11 +137,31 @@ describe("database migrations", () => {
       const authApplied = await dataSource.query(
         "SELECT name FROM migrations WHERE name = 'CreateAuthAndAudit1760000002000'",
       );
+      const loyaltyApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateLoyaltyPrograms1760000003000'",
+      );
+      const ledgerApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateLoyaltyLedger1760000004000'",
+      );
+      const fraudApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'AddFraudControls1760000005000'",
+      );
+      const walletSyncApplied = await dataSource.query(
+        "SELECT name FROM migrations WHERE name = 'CreateWalletSyncJobs1760000006000'",
+      );
       if (
         applied.length ||
         staffApplied.length ||
-        authApplied.length
+        authApplied.length ||
+        loyaltyApplied.length ||
+        ledgerApplied.length ||
+        fraudApplied.length ||
+        walletSyncApplied.length
       ) {
+        if (walletSyncApplied.length) await dataSource.undoLastMigration();
+        if (fraudApplied.length) await dataSource.undoLastMigration();
+        if (ledgerApplied.length) await dataSource.undoLastMigration();
+        if (loyaltyApplied.length) await dataSource.undoLastMigration();
         if (authApplied.length) await dataSource.undoLastMigration();
         if (staffApplied.length) await dataSource.undoLastMigration();
         if (applied.length) await dataSource.undoLastMigration();

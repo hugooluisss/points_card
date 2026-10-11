@@ -1,0 +1,19 @@
+<div class="min-h-screen lg:flex">
+  <app-sidebar
+    [groups]="groups()"
+    [mobileOpen]="mobileOpen()"
+    (closeMobile)="mobileOpen.set(false)"
+    (signOut)="logout()"
+  />
+  <div class="min-w-0 flex-1">
+    <app-header
+      [business]="business()"
+      [userName]="name()"
+      [userRole]="roleLabel()"
+      [menuOpen]="mobileOpen()"
+      (menuToggle)="mobileOpen.set(!mobileOpen())"
+      (signOut)="logout()"
+    />
+    <router-outlet />
+  </div>
+</div>

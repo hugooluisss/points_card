@@ -9,7 +9,8 @@ import { menuForRole } from './menu';
 @Component({
   standalone: true,
   imports: [RouterOutlet, AppHeader, AppSidebar],
-  template: `<div class="min-h-screen lg:flex"><app-sidebar [groups]="groups()" [mobileOpen]="mobileOpen()" (closeMobile)="mobileOpen.set(false)" (signOut)="logout()"/><div class="min-w-0 flex-1"><app-header [business]="business()" [userName]="name()" [userRole]="roleLabel()" [menuOpen]="mobileOpen()" (menuToggle)="mobileOpen.set(!mobileOpen())" (signOut)="logout()"/><router-outlet /></div></div>`,
+  templateUrl: './app-shell.html',
+  styleUrl: './app-shell.scss',
 })
 export class AppShell {
   private readonly auth = inject(AuthService);
@@ -17,7 +18,14 @@ export class AppShell {
   readonly user = this.auth.user;
   readonly name = computed(() => this.user()?.name ?? 'equipo');
   readonly business = computed(() => this.user()?.businessId ?? 'Mi negocio');
-  readonly roleLabel = computed(() => ({ [Role.Owner]: 'Propietario', [Role.Manager]: 'Gerente', [Role.Cashier]: 'Cajero' }[this.user()?.role ?? Role.Owner]));
+  readonly roleLabel = computed(
+    () =>
+      ({ [Role.Owner]: 'Propietario', [Role.Manager]: 'Gerente', [Role.Cashier]: 'Cajero' })[
+        this.user()?.role ?? Role.Owner
+      ],
+  );
   readonly groups = computed(() => menuForRole(this.user()?.role ?? Role.Owner));
-  logout() { this.auth.logout().subscribe(); }
+  logout() {
+    this.auth.logout().subscribe();
+  }
 }

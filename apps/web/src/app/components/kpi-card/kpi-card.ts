@@ -6,6 +6,7 @@ export type KpiColor = 'peach' | 'green' | 'blue' | 'mint';
   selector: 'app-kpi-card',
   standalone: true,
   templateUrl: './kpi-card.html',
+  styleUrl: './kpi-card.scss',
 })
 export class KpiCard {
   readonly title = input.required<string>();
