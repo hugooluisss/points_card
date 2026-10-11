@@ -1,0 +1,9 @@
+<span
+  class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold"
+  [class.bg-amber-100]="variant() === 'in-progress'"
+  [class.text-amber-950]="variant() === 'in-progress'"
+  [class.bg-green-100]="variant() === 'completed'"
+  [class.text-green-950]="variant() === 'completed'"
+  [class.bg-rose-100]="variant() === 'failed'"
+  [class.text-rose-950]="variant() === 'failed'"
+>{{ label() }}</span>

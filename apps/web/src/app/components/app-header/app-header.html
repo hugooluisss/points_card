@@ -1,0 +1,42 @@
+<header class="sticky top-0 z-10 flex h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-7 lg:px-9">
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      class="grid h-10 w-10 place-items-center rounded-xl border border-slate-300 text-xl text-slate-800 lg:hidden"
+      aria-label="Abrir menú"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="menuToggle.emit()"
+    >☰</button>
+    <div class="hidden text-sm text-slate-600 sm:block">
+      {{ business() }} <span class="mx-2 text-slate-400">/</span>
+      <span class="font-semibold text-slate-900">{{ section() }}</span>
+    </div>
+    <span class="text-base font-bold lg:hidden">Points Card</span>
+  </div>
+
+  <div class="relative">
+    <button
+      type="button"
+      class="flex items-center gap-2 rounded-xl p-1.5 text-left hover:bg-slate-50"
+      [attr.aria-expanded]="userMenuOpen()"
+      [attr.aria-label]="'Menú de ' + userName()"
+      (click)="userMenuOpen.set(!userMenuOpen())"
+    >
+      <span class="grid h-9 w-9 place-items-center rounded-full bg-rose-100 text-sm font-bold text-rose-950">{{ initials() }}</span>
+      <span class="hidden sm:block">
+        <span class="block text-sm font-semibold">{{ userName() }}</span>
+        <span class="block text-xs text-slate-600">{{ userRole() }}</span>
+      </span>
+      <span class="hidden text-slate-600 sm:block" aria-hidden="true">⌄</span>
+    </button>
+    @if (userMenuOpen()) {
+      <div class="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50"
+          (click)="signOut.emit(); userMenuOpen.set(false)"
+        >Cerrar sesión</button>
+      </div>
+    }
+  </div>
+</header>

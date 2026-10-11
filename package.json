@@ -1,0 +1,12 @@
+{
+  "name": "points-card",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "npm run build --workspace packages/shared && npm run build --workspace apps/api && npm run build --workspace apps/web",
+    "test": "npm run build --workspace packages/shared && npm run test --workspace apps/api",
+    "dev:api": "npm run start:dev --workspace apps/api",
+    "dev:web": "npm run start --workspace apps/web"
+  }
+}

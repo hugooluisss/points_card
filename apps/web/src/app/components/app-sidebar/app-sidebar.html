@@ -1,0 +1,49 @@
+<aside
+  class="fixed inset-0 z-40 bg-black/30 lg:static lg:block lg:w-72 lg:bg-transparent"
+  [class.hidden]="!mobileOpen()"
+  (click)="closeMobile.emit()"
+>
+  <div
+    class="flex h-full w-72 flex-col border-r border-slate-200 bg-white"
+    (click)="$event.stopPropagation()"
+  >
+    <a routerLink="/" class="flex h-[76px] items-center gap-3 border-b border-slate-100 px-7 text-lg font-bold tracking-tight">
+      <span class="grid h-10 w-10 place-items-center rounded-2xl bg-primary-800 text-white">P</span>
+      Points Card
+    </a>
+    <nav aria-label="Navegación principal" class="flex-1 space-y-7 overflow-y-auto px-4 py-7">
+      @for (group of groups(); track group.label) {
+        <div>
+          <p class="px-3 pb-3 text-xs font-bold uppercase tracking-widest text-slate-600">{{ group.label }}</p>
+          <div class="space-y-1">
+            @for (item of group.items; track item.label) {
+              <a
+                [routerLink]="item.href ?? '/'"
+                (click)="closeMobile.emit()"
+                routerLinkActive="bg-primary-50 text-primary-900"
+                [routerLinkActiveOptions]="{ exact: item.label === 'Inicio' }"
+                #activeLink="routerLinkActive"
+                [attr.aria-current]="activeLink.isActive ? 'page' : null"
+                class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium"
+                [class.text-slate-700]="!activeLink.isActive"
+                [class.hover:bg-slate-50]="!activeLink.isActive"
+              >
+                <span class="flex items-center gap-3">
+                  <span aria-hidden="true">{{ item.icon }}</span>{{ item.label }}
+                </span>
+                @if (item.count !== undefined) {
+                  <span class="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-bold text-primary-900">{{ item.count }}</span>
+                }
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </nav>
+    <div class="border-t border-slate-100 p-4">
+      <button type="button" class="w-full rounded-xl px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-50" (click)="signOut.emit()">
+        ↪　Cerrar sesión
+      </button>
+    </div>
+  </div>
+</aside>

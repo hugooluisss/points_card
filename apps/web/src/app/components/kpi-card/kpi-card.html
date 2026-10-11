@@ -1,0 +1,20 @@
+<article
+  class="relative overflow-hidden rounded-card p-5"
+  [class.bg-peach]="color() === 'peach'"
+  [class.bg-pastel-green]="color() === 'green'"
+  [class.bg-pastel-blue]="color() === 'blue'"
+  [class.bg-mint]="color() === 'mint'"
+>
+  <div class="flex items-start justify-between">
+    <h2 class="text-sm font-semibold text-slate-800">{{ title() }}</h2>
+    <button
+      type="button"
+      class="grid h-9 w-9 place-items-center rounded-full bg-white text-lg text-slate-900"
+      [attr.aria-label]="'Ver ' + title().toLowerCase()"
+      (click)="action.emit()"
+    >↗</button>
+  </div>
+  <p class="mt-5 text-3xl font-semibold tracking-tight text-slate-950">{{ value() }}</p>
+  <p class="mt-1 text-sm text-slate-700">{{ delta() }}</p>
+  <span class="absolute -bottom-8 -right-5 h-24 w-24 rounded-full bg-white/30" aria-hidden="true"></span>
+</article>

@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+  --color-peach: #fff0e3;
+  --color-pastel-green: #eaf4e6;
+  --color-pastel-blue: #e9edff;
+  --color-mint: #e7f2f1;
+  --radius-card: 1rem;
+}
+
+@layer base {
+  body { min-height: 100vh; background: #f7f8f7; color: #0f172a; font-family: var(--font-sans); }
+  :focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+}

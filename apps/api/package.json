@@ -1,0 +1,45 @@
+{
+  "name": "@points-card/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main",
+    "start:dev": "nest start --watch",
+    "migration:run": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert",
+    "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate src/database/migrations/Generated",
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.7",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.2.7",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/platform-express": "^11.2.7",
+    "@nestjs/typeorm": "^11.0.3",
+    "@points-card/shared": "^1.0.0",
+    "argon2": "^0.45.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^18.0.7",
+    "mysql2": "^3.24.5",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.3.31"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.2.7",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.6.5",
+    "@types/supertest": "^7.2.1",
+    "jest": "^30.5.2",
+    "supertest": "^7.3.1",
+    "ts-jest": "^29.4.14",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^6.0.3"
+  }
+}

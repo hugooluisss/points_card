@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registra tu negocio · Points Card</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'DM Sans',ui-sans-serif,system-ui,sans-serif}.focus-ring:focus-visible{outline:3px solid #0f766e;outline-offset:3px}</style>
+</head>
+<body class="min-h-screen bg-[#f7f8f7] text-slate-900">
+  <main class="grid min-h-screen lg:grid-cols-[.85fr_1.15fr]">
+    <aside class="relative hidden overflow-hidden bg-teal-800 px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between xl:px-20">
+      <div class="absolute -right-28 -top-24 h-96 w-96 rounded-full border border-white/15"></div><div class="absolute -bottom-40 -left-20 h-[32rem] w-[32rem] rounded-full border border-white/15"></div>
+      <a href="login.html" class="focus-ring relative inline-flex w-fit items-center gap-3 rounded-xl text-lg font-bold"><span class="grid h-10 w-10 place-items-center rounded-2xl bg-white text-teal-800">P</span>Points Card</a>
+      <div class="relative max-w-lg"><span class="text-sm font-semibold uppercase tracking-[.2em] text-teal-100">Empieza hoy</span><h1 class="mt-5 text-4xl font-semibold leading-tight xl:text-5xl">Construye relaciones que duran.</h1><p class="mt-5 text-lg leading-8 text-teal-50">Configura la base de tu programa y dale a cada cliente un motivo para volver.</p></div>
+      <p class="relative text-sm text-teal-100">Simple para tu equipo. Especial para tus clientes.</p>
+    </aside>
+    <section class="flex items-center justify-center px-6 py-10 sm:px-12">
+      <div class="w-full max-w-xl">
+        <a href="login.html" class="focus-ring inline-flex items-center gap-3 rounded-xl text-lg font-bold tracking-tight lg:hidden"><span class="grid h-10 w-10 place-items-center rounded-2xl bg-teal-700 text-white">P</span>Points Card</a>
+        <div class="mt-9 lg:mt-0"><p class="text-sm font-semibold uppercase tracking-[.18em] text-teal-800">Nuevo comercio</p><h2 class="mt-3 text-3xl font-semibold tracking-tight">Registra tu negocio</h2><p class="mt-3 text-slate-600">Crea la cuenta de administración para comenzar.</p></div>
+        <form class="mt-7 grid gap-4 sm:grid-cols-2" action="#" method="get">
+          <div class="sm:col-span-2"><label for="business" class="mb-2 block text-sm font-semibold">Nombre del negocio</label><input class="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 placeholder:text-slate-500" id="business" name="business" autocomplete="organization" placeholder="Café Nube" required></div>
+          <div class="sm:col-span-2"><label for="person" class="mb-2 block text-sm font-semibold">Tu nombre</label><input class="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 placeholder:text-slate-500" id="person" name="person" autocomplete="name" placeholder="Nombre y apellido" required></div>
+          <div class="sm:col-span-2"><label for="email" class="mb-2 block text-sm font-semibold">Correo electrónico</label><input class="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 placeholder:text-slate-500" id="email" name="email" type="email" autocomplete="email" placeholder="tu@negocio.com" required></div>
+          <div><label for="password" class="mb-2 block text-sm font-semibold">Contraseña</label><input class="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 placeholder:text-slate-500" id="password" name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required></div>
+          <div><label for="confirm" class="mb-2 block text-sm font-semibold">Confirma contraseña</label><input class="focus-ring w-full rounded-xl border border-slate-300 bg-white px-4 py-3 placeholder:text-slate-500" id="confirm" name="confirm" type="password" autocomplete="new-password" placeholder="Repite tu contraseña" minlength="8" required></div>
+          <label class="sm:col-span-2 flex items-start gap-3 text-sm leading-6 text-slate-600"><input class="focus-ring mt-1 h-4 w-4 rounded border-slate-400 accent-teal-800" type="checkbox" required><span>Acepto los términos de servicio y la política de privacidad.</span></label>
+          <button class="focus-ring sm:col-span-2 rounded-xl bg-teal-800 px-5 py-3.5 font-semibold text-white shadow-sm hover:bg-teal-900" type="submit">Crear cuenta de negocio</button>
+        </form>
+        <p class="mt-6 text-center text-sm text-slate-600">¿Ya tienes una cuenta? <a class="focus-ring rounded font-semibold text-teal-800 underline decoration-teal-300 underline-offset-4" href="login.html">Inicia sesión</a></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

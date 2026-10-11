@@ -1,0 +1,23 @@
+<div class="overflow-x-auto rounded-card border border-slate-200 bg-white">
+  <table class="w-full border-collapse text-left text-sm">
+    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-700">
+      <tr>
+        @for (column of columns(); track column.key) {
+          <th scope="col" class="px-5 py-3 font-bold">{{ column.label }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      <tr class="text-slate-800" [hidden]="rows().length > 0">
+        <td class="px-5 py-4 text-slate-600" [attr.colspan]="columns().length">{{ emptyText() }}</td>
+      </tr>
+      @for (row of rows(); track $index) {
+        <tr class="text-slate-800">
+          @for (column of columns(); track column.key) {
+            <td class="px-5 py-4">{{ row[column.key] }}</td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
