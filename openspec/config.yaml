@@ -1,0 +1,41 @@
+schema: spec-driven
+
+context: |
+  Language: es
+  All artifacts must be written in es.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  Code, identifiers, commits and API names are written in English.
+
+  Product: multi-tenant SaaS for loyalty cards in Apple Wallet and Google Wallet
+  (modes: stamps, points, club). Payment of the subscription via Stripe.
+  The backend is the source of truth for balances, redemptions, consent and card
+  state; Wallet only renders the pass.
+
+  Stack:
+  - Monorepo with npm workspaces: apps/web, apps/api, packages/shared (DTOs, types).
+  - Frontend: latest Angular (standalone components, signals) + Tailwind CSS.
+    Visual reference: light dashboard, white sidebar with grouped menu and count
+    badges, pastel KPI cards, one highlighted teal chart panel, rounded corners.
+    Screens are designed (HTML mockup) before being built in Angular.
+  - Backend: NestJS + TypeORM + MySQL.
+  - No Redis until campaigns need it; async work goes through an outbox table.
+
+  Backend layering (mandatory):
+  - Controller: handles HTTP requests/responses only; no business logic.
+  - Service: business rules; never touches TypeORM directly.
+  - Repository: all data access; applies the tenant (business) scope to every query.
+  - Wallet providers (Apple, Google) sit behind one interface.
+
+  Phases: F0 wallet validation (gate) -> F1 core/tenancy/auth -> F2 stamps & points
+  -> F3 customer onboarding -> F4 dashboard -> F5 billing (Stripe) -> F6 club & campaigns.
+  One OpenSpec change per phase.
+
+  Facts vs assumptions: wallet capabilities (especially notifications) are unverified
+  until F0 confirms them on real devices; do not specify behavior that depends on them
+  as certain.
+
+rules:
+  proposal:
+    - Include a "Non-goals" section.
+  tasks:
+    - Group tasks by capability and keep each task small enough to review on its own.
