@@ -6,8 +6,9 @@ import { StaffRepository } from "./staff.repository";
 import { StaffService } from "./staff.service";
 import { StaffController } from "./staff.controller";
 import { RolesGuard } from "../auth/roles.guard";
+import { BillingModule } from "../billing/billing.module";
 @Module({
-  imports: [TypeOrmModule.forFeature([StaffUser, Branch])],
+  imports: [TypeOrmModule.forFeature([StaffUser, Branch]), BillingModule],
   controllers: [StaffController],
   providers: [StaffRepository, StaffService, RolesGuard],
 })

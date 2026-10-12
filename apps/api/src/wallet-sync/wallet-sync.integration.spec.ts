@@ -27,7 +27,10 @@ describe("wallet sync", () => {
     configureApp(app);
     await app.init();
     dataSource = new DataSource(
-      databaseOptions(new ConfigService({ ...process.env, NODE_ENV: "test" })),
+      databaseOptions(
+        new ConfigService({ ...process.env, NODE_ENV: "test" }),
+        process.env.DB_DATABASE_TEST!,
+      ),
     );
     await dataSource.initialize();
     await dataSource.runMigrations();

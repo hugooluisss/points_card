@@ -13,6 +13,11 @@ import { LedgerModule } from "./ledger/ledger.module";
 import { WalletSyncModule } from "./wallet-sync/wallet-sync.module";
 import { UtcTimezoneService } from "./database/utc-timezone.service";
 import { validateEnvironment } from "./config/validate-environment";
+import { CustomersModule } from "./customers/customers.module";
+import { PrivacyModule } from "./privacy/privacy.module";
+import { RegistrationModule } from "./registration/registration.module";
+import { BillingModule } from "./billing/billing.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
 
 @Module({
   imports: [
@@ -24,10 +29,23 @@ import { validateEnvironment } from "./config/validate-environment";
     LoyaltyModule,
     LedgerModule,
     WalletSyncModule,
+    CustomersModule,
+    PrivacyModule,
+    RegistrationModule,
+    BillingModule,
+    DashboardModule,
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnvironment }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => databaseOptions(config),
+      useFactory: (config: ConfigService) =>
+        databaseOptions(
+          config,
+          config.getOrThrow<string>(
+            process.env.NODE_ENV === "test"
+              ? "DB_DATABASE_TEST"
+              : "DB_DATABASE",
+          ),
+        ),
     }),
   ],
   controllers: [HealthController],

@@ -46,5 +46,28 @@ export function validateEnvironment(config: Record<string, unknown>) {
   ) {
     throw new Error("DB_PORT must be a valid port number");
   }
+  if (config.PUBLIC_WEB_URL !== undefined) {
+    try {
+      const url = new URL(String(config.PUBLIC_WEB_URL));
+      if (url.protocol !== "https:" && url.protocol !== "http:") throw 0;
+    } catch {
+      throw new Error("PUBLIC_WEB_URL must be an http(s) URL");
+    }
+  }
+  if (config.BILLING_RETURN_URL !== undefined) {
+    try {
+      const url = new URL(String(config.BILLING_RETURN_URL));
+      if (url.protocol !== "https:" && url.protocol !== "http:") throw 0;
+    } catch {
+      throw new Error("BILLING_RETURN_URL must be an http(s) URL");
+    }
+  }
+  for (const key of ["BILLING_GRACE_DAYS", "BILLING_RETENTION_DAYS"] as const) {
+    if (
+      config[key] !== undefined &&
+      (!Number.isInteger(Number(config[key])) || Number(config[key]) < 0)
+    )
+      throw new Error(`${key} must be a non-negative integer`);
+  }
   return config;
 }

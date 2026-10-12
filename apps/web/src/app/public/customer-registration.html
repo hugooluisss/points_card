@@ -1,0 +1,140 @@
+<main
+  class="min-h-screen bg-[#f7f8f7] px-4 py-8 text-slate-900 sm:py-12"
+  [style.--brand]="page()?.brandColor || '#0f766e'"
+>
+  <section class="mx-auto max-w-lg">
+    @if (loading()) {
+      <p role="status" class="rounded-2xl bg-white p-6">Cargando registro…</p>
+    } @else if (!page()) {
+      <p role="alert" class="rounded-2xl bg-white p-6 text-red-800">{{ error() }}</p>
+    } @else {
+      <header class="mb-6 text-center">
+        @if (page()?.logoUrl) {
+          <img class="mx-auto mb-4 h-16 max-w-40 object-contain" [src]="page()?.logoUrl" alt="" />
+        }
+        <p class="text-sm font-semibold uppercase tracking-widest text-teal-800">
+          Tarjeta de lealtad
+        </p>
+        <h1 class="mt-2 text-3xl font-semibold tracking-tight">{{ page()?.businessName }}</h1>
+        <p class="mt-2 text-slate-600">Regístrate para obtener tu tarjeta digital.</p>
+      </header>
+      @if (success()) {
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <h2 class="text-xl font-semibold">
+            {{ existing() ? 'Revisa tu mensaje' : '¡Listo! Tu tarjeta está preparada' }}
+          </h2>
+          <p class="mt-2 text-slate-600">{{ success() }}</p>
+          @if (!existing()) {
+            <div class="mt-5 grid gap-3">
+              @for (pass of passes(); track pass.platform) {
+                <a
+                  [href]="pass.saveUrl"
+                  class="rounded-xl px-4 py-3 font-semibold text-white"
+                  [style.background]="page()?.brandColor || '#0f766e'"
+                  >{{
+                    pass.platform === 'apple'
+                      ? 'Agregar a Apple Wallet'
+                      : 'Guardar en Google Wallet'
+                  }}</a
+                >
+              }
+              @for (pass of passes(); track pass.platform) {
+                <button
+                  type="button"
+                  class="text-sm font-semibold text-teal-800 underline"
+                  (click)="copyLink(pass.saveUrl)"
+                >
+                  Copiar enlace de
+                  {{ pass.platform === 'apple' ? 'Apple Wallet' : 'Google Wallet' }}
+                </button>
+              }
+            </div>
+          }
+        </section>
+      } @else {
+        <form
+          class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
+          (ngSubmit)="save()"
+          novalidate
+        >
+          @for (field of page()?.fields ?? []; track field.key) {
+            <div>
+              <label [for]="field.key" class="mb-2 block text-sm font-semibold"
+                >{{
+                  field.key === 'name'
+                    ? 'Nombre'
+                    : field.key === 'email'
+                      ? 'Correo electrónico'
+                      : field.key === 'phone'
+                        ? 'Teléfono'
+                        : 'Fecha de nacimiento'
+                }}
+                <span>{{ field.required ? '*' : '(opcional)' }}</span></label
+              >
+              <input
+                [id]="field.key"
+                [name]="field.key"
+                [(ngModel)]="values[field.key]"
+                [type]="
+                  field.key === 'birthday' ? 'date' : field.key === 'email' ? 'email' : 'text'
+                "
+                [attr.autocomplete]="
+                  field.key === 'name'
+                    ? 'name'
+                    : field.key === 'email'
+                      ? 'email'
+                      : field.key === 'phone'
+                        ? 'tel'
+                        : 'bday'
+                "
+                class="w-full rounded-xl border border-slate-300 px-4 py-3 focus-visible:outline-2 focus-visible:outline-teal-700"
+              />
+              <p class="text-sm text-red-700">{{ fieldError(field.key, field.required) }}</p>
+            </div>
+          }
+          <div class="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
+            <label for="website">Sitio web</label
+            ><input
+              id="website"
+              name="website"
+              tabindex="-1"
+              autocomplete="off"
+              [(ngModel)]="website"
+            />
+          </div>
+          <p class="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+            {{ page()?.privacyNotice?.text }}
+          </p>
+          <label class="flex items-start gap-3 text-sm leading-6"
+            ><input
+              name="acceptPrivacy"
+              type="checkbox"
+              [(ngModel)]="acceptPrivacy"
+              required
+              class="mt-1 accent-teal-800"
+            /><span
+              >Acepto el aviso de privacidad
+              <strong class="text-red-700">(obligatorio)</strong></span
+            ></label
+          >
+          <label class="flex items-start gap-3 text-sm leading-6 text-slate-600"
+            ><input
+              name="acceptMarketing"
+              type="checkbox"
+              [(ngModel)]="acceptMarketing"
+              class="mt-1 accent-teal-800"
+            /><span>Quiero recibir promociones y novedades (opcional)</span></label
+          >
+          <p role="alert" class="text-sm text-red-700">{{ error() }}</p>
+          <button
+            [disabled]="submitting()"
+            class="w-full rounded-xl px-5 py-3.5 font-semibold text-white disabled:opacity-50"
+            [style.background]="page()?.brandColor || '#0f766e'"
+          >
+            {{ submitting() ? 'Enviando…' : 'Crear mi tarjeta' }}
+          </button>
+        </form>
+      }
+    }
+  </section>
+</main>

@@ -20,5 +20,10 @@ export class Redemption {
     default: "completed",
   })
   status!: "completed" | "reversed";
-  @CreateDateColumn({ name: "created_at", type: "timestamp" }) createdAt!: Date;
+  @Column({
+    name: "created_at",
+    type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
+  })
+  createdAt!: Date;
 }

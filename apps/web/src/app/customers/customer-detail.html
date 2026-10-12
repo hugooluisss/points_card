@@ -1,0 +1,59 @@
+<main class="mx-auto max-w-6xl px-4 py-8 sm:px-8">
+  <a routerLink="/clientes" class="text-sm font-semibold text-teal-800 underline"
+    >← Volver a clientes</a
+  >
+  @if (loading()) {
+    <p role="status" class="mt-5 rounded-xl bg-white p-6">Cargando cliente…</p>
+  } @else if (error()) {
+    <p role="alert" class="mt-5 rounded-xl bg-white p-6 text-red-800">
+      {{ error() }} <button class="ml-3 underline" (click)="load()">Reintentar</button>
+    </p>
+  } @else if (data(); as detail) {
+    <header class="my-6">
+      <h1 class="text-3xl font-semibold">{{ detail.customer.name }}</h1>
+      <p class="mt-2 text-slate-600">
+        {{ detail.customer.email || detail.customer.phone || 'Sin contacto' }} ·
+        {{
+          detail.customer.marketingConsent
+            ? 'Con consentimiento de marketing'
+            : 'Sin consentimiento de marketing'
+        }}
+      </p>
+    </header>
+    <section>
+      <h2 class="mb-3 text-xl font-semibold">Cuentas de lealtad</h2>
+      @if (!detail.accounts.length) {
+        <p class="rounded-xl bg-white p-5">No tiene cuentas activas.</p>
+      } @else {
+        <div class="grid gap-3 sm:grid-cols-2">
+          @for (account of detail.accounts; track account.id) {
+            <article class="rounded-2xl border bg-white p-5">
+              <h3 class="font-semibold">{{ account.programName }}</h3>
+              <p class="mt-2 text-slate-600">
+                {{ account.mode === 'stamps' ? 'Sellos' : 'Puntos' }} · {{ account.balance }} ·
+                {{ account.status }}
+              </p>
+            </article>
+          }
+        </div>
+      }
+    </section>
+    <section class="mt-7">
+      <h2 class="mb-3 text-xl font-semibold">Movimientos</h2>
+      @if (!detail.movements.length) {
+        <p class="rounded-xl bg-white p-5">Sin movimientos todavía.</p>
+      } @else {
+        <ul class="divide-y rounded-2xl border bg-white px-5">
+          @for (movement of detail.movements; track movement.id) {
+            <li class="flex flex-wrap justify-between gap-2 py-4">
+              <span
+                >{{ movement.type }} · {{ movement.programName }} · {{ movement.staffName }}</span
+              ><strong>{{ movement.amount }}</strong
+              ><time class="text-sm text-slate-500">{{ movement.createdAt | date: 'medium' }}</time>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</main>

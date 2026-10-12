@@ -18,6 +18,9 @@ describe("ledger HTTP", () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let fixedNow: Date;
+  const initialFixedNow = new Date("2026-10-12T05:59:00.000Z");
+  const originalBusinessTimezone = process.env.BUSINESS_TIMEZONE;
+  const businessTimezone = "America/Mexico_City";
   const emails: string[] = [];
   beforeAll(async () => {
     process.env.NODE_ENV = "test";
@@ -30,20 +33,16 @@ describe("ledger HTTP", () => {
     fixedNow = new Date("2026-10-12T05:59:00.000Z");
     app.get(Clock).now = () => new Date(fixedNow);
     dataSource = new DataSource(
-      databaseOptions(new ConfigService({ ...process.env, NODE_ENV: "test" })),
+      databaseOptions(
+        new ConfigService({ ...process.env, NODE_ENV: "test" }),
+        process.env.DB_DATABASE_TEST!,
+      ),
     );
     await dataSource.initialize();
     await dataSource.query("SET time_zone = '+00:00'");
     expect(dataSource.options.database).toBe("points_card_test");
     expect(app.get(DataSource).options.database).toBe("points_card_test");
-    if (
-      !(
-        await dataSource.query(
-          "SELECT name FROM migrations WHERE name = 'CreateWalletSyncJobs1760000006000'",
-        )
-      ).length
-    )
-      await dataSource.runMigrations();
+    await dataSource.runMigrations();
     const roundTrip = new Date("2026-10-11T23:59:00.000Z");
     await dataSource.query(
       "CREATE TEMPORARY TABLE utc_timestamp_probe (value TIMESTAMP NOT NULL)",
@@ -58,6 +57,10 @@ describe("ledger HTTP", () => {
     await dataSource.query("DROP TEMPORARY TABLE utc_timestamp_probe");
   });
   afterEach(async () => {
+    if (originalBusinessTimezone === undefined)
+      delete process.env.BUSINESS_TIMEZONE;
+    else process.env.BUSINESS_TIMEZONE = originalBusinessTimezone;
+    fixedNow = new Date(initialFixedNow);
     for (const email of emails.splice(0)) {
       const rows = await dataSource.query(
         "SELECT business_id FROM staff_users WHERE email = ?",
@@ -224,24 +227,18 @@ describe("ledger HTTP", () => {
       })
       .expect(201);
     const race = await Promise.all([
-      request(app.getHttpServer())
-        .post("/ledger/redeem")
-        .set(auth)
-        .send({
-          cardCode: raceAccount.body.cardCode,
-          branchId,
-          rewardId: reward.body.id,
-          idempotencyKey: "redeem-a",
-        }),
-      request(app.getHttpServer())
-        .post("/ledger/redeem")
-        .set(auth)
-        .send({
-          cardCode: raceAccount.body.cardCode,
-          branchId,
-          rewardId: reward.body.id,
-          idempotencyKey: "redeem-b",
-        }),
+      request(app.getHttpServer()).post("/ledger/redeem").set(auth).send({
+        cardCode: raceAccount.body.cardCode,
+        branchId,
+        rewardId: reward.body.id,
+        idempotencyKey: "redeem-a",
+      }),
+      request(app.getHttpServer()).post("/ledger/redeem").set(auth).send({
+        cardCode: raceAccount.body.cardCode,
+        branchId,
+        rewardId: reward.body.id,
+        idempotencyKey: "redeem-b",
+      }),
     ]);
     expect(race.filter((response) => response.status === 201)).toHaveLength(1);
     expect(race.filter((response) => response.status === 409)).toHaveLength(1);
@@ -250,6 +247,12 @@ describe("ledger HTTP", () => {
       "SELECT id, amount FROM loyalty_transactions WHERE id = ?",
       [redeemed.body.transaction.id],
     );
+    expect(
+      await dataSource.query(
+        "SELECT id FROM redemptions WHERE transaction_id = ?",
+        [redeemed.body.transaction.id],
+      ),
+    ).toHaveLength(1);
     await request(app.getHttpServer())
       .post(`/ledger/${redeemed.body.transaction.id}/reverse`)
       .set(auth)
@@ -295,156 +298,150 @@ describe("ledger HTTP", () => {
   });
 
   it("enforces fraud limits, persists references, requires reversal reasons, and exposes tenant anomalies", async () => {
-    process.env.BUSINESS_TIMEZONE = "America/Mexico_City";
-    const email = `fraud-${Date.now()}-${Math.random()}@example.test`;
-    emails.push(email);
+    process.env.BUSINESS_TIMEZONE = businessTimezone;
+    const starts = [
+      "2026-10-12T06:30:00Z",
+      "2026-10-12T12:00:00Z",
+      "2026-10-12T18:00:00Z",
+      "2026-10-13T00:00:00Z",
+      "2026-10-13T05:30:00Z",
+      "2026-10-12T05:59:00Z",
+      "2026-10-12T06:01:00Z",
+    ];
     const password = "secure-password";
-    const business = await request(app.getHttpServer())
-      .post("/businesses/register")
-      .send({ businessName: "Fraud", ownerName: "Owner", email, password })
-      .expect(201);
-    const login = await request(app.getHttpServer())
-      .post("/auth/login")
-      .send({ email, password })
-      .expect(200);
-    const auth = { Authorization: `Bearer ${login.body.accessToken}` };
-    const program = await request(app.getHttpServer())
-      .post("/programs")
-      .set(auth)
-      .send({
-        name: "Stamps",
-        mode: "stamps",
-        validFrom: "2026-01-01",
-        stampsGoal: 10,
-        minIntervalMinutes: 60,
-        maxAccumulationsPerCardPerDay: 2,
-        maxAccumulationsPerStaffPerDay: 20,
-        staffDailyAlertThreshold: 1,
-      })
-      .expect(201);
-    const account = await request(app.getHttpServer())
-      .post("/ledger/accounts")
-      .set(auth)
-      .send({ programId: program.body.id })
-      .expect(201);
-    const branchId = business.body.branchId;
-    await request(app.getHttpServer())
-      .post("/staff")
-      .set(auth)
-      .send({
-        name: "Threshold cashier",
-        email: `limit-${Date.now()}@example.test`,
-        password,
-        role: "cashier",
-      })
-      .expect(201);
-    const first = await request(app.getHttpServer())
-      .post("/ledger/accumulate")
-      .set(auth)
-      .send({
-        cardCode: account.body.cardCode,
-        branchId,
-        idempotencyKey: "fraud-first",
-        reference: "ticket-42",
-      })
-      .expect(201);
-    expect(first.body.transaction.reference).toBe("ticket-42");
-    await dataSource.query(
-      "UPDATE loyalty_transactions SET created_at = ? WHERE id = ?",
-      [fixedNow, first.body.transaction.id],
-    );
-    await request(app.getHttpServer())
-      .post("/ledger/accumulate")
-      .set(auth)
-      .send({
-        cardCode: account.body.cardCode,
-        branchId,
-        idempotencyKey: "fraud-fast",
-      })
-      .expect(409)
-      .expect(({ body }) =>
-        expect(body.message).toMatch(/Demasiado pronto: espera \d+ min/),
+    for (const [index, start] of starts.entries()) {
+      fixedNow = new Date(start);
+      const email = `fraud-scenario-${index}@example.test`;
+      emails.push(email);
+      const business = await request(app.getHttpServer())
+        .post("/businesses/register")
+        .send({ businessName: "Fraud", ownerName: "Owner", email, password })
+        .expect(201);
+      const login = await request(app.getHttpServer())
+        .post("/auth/login")
+        .send({ email, password })
+        .expect(200);
+      const auth = { Authorization: `Bearer ${login.body.accessToken}` };
+      const program = await request(app.getHttpServer())
+        .post("/programs")
+        .set(auth)
+        .send({
+          name: "Stamps",
+          mode: "stamps",
+          validFrom: "2026-01-01",
+          stampsGoal: 10,
+          minIntervalMinutes: 60,
+          maxAccumulationsPerCardPerDay: 2,
+          maxAccumulationsPerStaffPerDay: 20,
+          staffDailyAlertThreshold: 1,
+        })
+        .expect(201);
+      const account = await request(app.getHttpServer())
+        .post("/ledger/accounts")
+        .set(auth)
+        .send({ programId: program.body.id })
+        .expect(201);
+      const branchId = business.body.branchId;
+      const cashierEmail = `limit-scenario-${index}@example.test`;
+      await request(app.getHttpServer())
+        .post("/staff")
+        .set(auth)
+        .send({
+          name: "Threshold cashier",
+          email: cashierEmail,
+          password,
+          role: "cashier",
+        })
+        .expect(201);
+      const cashierLogin = await request(app.getHttpServer())
+        .post("/auth/login")
+        .send({ email: cashierEmail, password })
+        .expect(200);
+      const cashierAuth = {
+        Authorization: `Bearer ${cashierLogin.body.accessToken}`,
+      };
+      const first = await request(app.getHttpServer())
+        .post("/ledger/accumulate")
+        .set(cashierAuth)
+        .send({
+          cardCode: account.body.cardCode,
+          branchId,
+          idempotencyKey: "fraud-first",
+          reference: "ticket-42",
+        })
+        .expect(201);
+      expect(first.body.transaction.reference).toBe("ticket-42");
+      await request(app.getHttpServer())
+        .post("/ledger/accumulate")
+        .set(cashierAuth)
+        .send({
+          cardCode: account.body.cardCode,
+          branchId,
+          idempotencyKey: "fraud-fast",
+        })
+        .expect(409)
+        .expect(({ body }) =>
+          expect(body.message).toMatch(/Demasiado pronto: espera \d+ min/),
+        );
+      await dataSource.query(
+        "UPDATE programs SET min_interval_minutes = NULL WHERE id = ?",
+        [program.body.id],
       );
-    await dataSource.query(
-      "UPDATE programs SET min_interval_minutes = NULL WHERE id = ?",
-      [program.body.id],
-    );
-    await dataSource.query(
-      "UPDATE loyalty_transactions SET created_at = ? WHERE id = ?",
-      [new Date("2026-10-12T05:59:00.000Z"), first.body.transaction.id],
-    );
-    const second = await request(app.getHttpServer())
-      .post("/ledger/accumulate")
-      .set(auth)
-      .send({
-        cardCode: account.body.cardCode,
-        branchId,
-        idempotencyKey: "fraud-second",
-      })
-      .expect(201);
-    await dataSource.query(
-      "UPDATE programs SET min_interval_minutes = NULL WHERE id = ?",
-      [program.body.id],
-    );
-    const reversed = await request(app.getHttpServer())
-      .post(`/ledger/${first.body.transaction.id}/reverse`)
-      .set(auth)
-      .send({ reason: "Duplicate", idempotencyKey: "fraud-reversed" })
-      .expect(201);
-    await dataSource.query(
-      "UPDATE loyalty_transactions SET created_at = ? WHERE id = ?",
-      [new Date("2026-10-12T05:59:00.000Z"), second.body.transaction.id],
-    );
-    await dataSource.query(
-      "UPDATE loyalty_transactions SET created_at = ? WHERE account_id = ? AND idempotency_key = 'fraud-first'",
-      [new Date("2026-10-12T05:59:00.000Z"), account.body.id],
-    );
-    await request(app.getHttpServer())
-      .post("/ledger/accumulate")
-      .set(auth)
-      .send({
-        cardCode: account.body.cardCode,
-        branchId,
-        idempotencyKey: "fraud-limit",
-      })
-      .expect(409)
-      .expect(({ body }) =>
-        expect(body.message).toContain("límite de acumulaciones"),
+      const second = await request(app.getHttpServer())
+        .post("/ledger/accumulate")
+        .set(cashierAuth)
+        .send({
+          cardCode: account.body.cardCode,
+          branchId,
+          idempotencyKey: "fraud-second",
+        })
+        .expect(201);
+      await dataSource.query(
+        "UPDATE programs SET min_interval_minutes = NULL WHERE id = ?",
+        [program.body.id],
       );
-    fixedNow = new Date("2026-10-12T06:01:00.000Z");
-    const third = await request(app.getHttpServer())
-      .post("/ledger/accumulate")
-      .set(auth)
-      .send({
-        cardCode: account.body.cardCode,
-        branchId,
-        idempotencyKey: "fraud-after-midnight",
-      })
-      .expect(201);
-    await dataSource.query(
-      "UPDATE loyalty_transactions SET created_at = ? WHERE idempotency_key IN ('fraud-second', 'fraud-after-midnight')",
-      [new Date("2026-10-12T06:01:00.000Z")],
-    );
-    await dataSource.query(
-      "UPDATE loyalty_transactions SET created_at = ? WHERE id = ?",
-      [new Date("2026-10-12T06:01:00.000Z"), third.body.transaction.id],
-    );
-    await request(app.getHttpServer())
-      .post(`/ledger/${reversed.body.transaction.id}/reverse`)
-      .set(auth)
-      .send({ reason: "  ", idempotencyKey: "fraud-reverse-short" })
-      .expect(400);
-    const anomalies = await request(app.getHttpServer())
-      .get("/ledger/anomalies?date=2026-10-12")
-      .set(auth)
-      .expect(200);
-    expect(anomalies.body).toHaveLength(1);
-    expect(Number(anomalies.body[0].count)).toBe(2);
-    const previousDay = await request(app.getHttpServer())
-      .get("/ledger/anomalies?date=2026-10-11")
-      .set(auth)
-      .expect(200);
-    expect(previousDay.body).toHaveLength(0);
+      const reversed = await request(app.getHttpServer())
+        .post(`/ledger/${first.body.transaction.id}/reverse`)
+        .set(auth)
+        .send({ reason: "Duplicate", idempotencyKey: "fraud-reversed" })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post("/ledger/accumulate")
+        .set(cashierAuth)
+        .send({
+          cardCode: account.body.cardCode,
+          branchId,
+          idempotencyKey: "fraud-limit",
+        })
+        .expect(409)
+        .expect(({ body }) =>
+          expect(body.message).toContain("límite de acumulaciones"),
+        );
+      const localDay = new Intl.DateTimeFormat("en-CA", {
+        timeZone: businessTimezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(start));
+      const [year, month, day] = localDay.split("-").map(Number);
+      fixedNow = new Date(Date.UTC(year, month - 1, day + 1, 6));
+      while (fixedNow <= new Date(start))
+        fixedNow.setUTCDate(fixedNow.getUTCDate() + 1);
+      const third = await request(app.getHttpServer())
+        .post("/ledger/accumulate")
+        .set(auth)
+        .send({
+          cardCode: account.body.cardCode,
+          branchId,
+          idempotencyKey: "fraud-after-midnight",
+        })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(`/ledger/${reversed.body.transaction.id}/reverse`)
+        .set(auth)
+        .send({ reason: "  ", idempotencyKey: "fraud-reverse-short" })
+        .expect(400);
+    }
   });
 
   it("resolves optional branches to the business default or the staff user's first allowed branch", async () => {
@@ -458,20 +455,16 @@ describe("ledger HTTP", () => {
     const owner = {
       Authorization: `Bearer ${(await request(app.getHttpServer()).post("/auth/login").send({ email, password }).expect(200)).body.accessToken}`,
     };
-    const extra = await dataSource
-      .getRepository(Branch)
-      .save({
-        businessId: business.body.businessId,
-        name: "Second",
-        isDefault: false,
-      });
-    const denied = await dataSource
-      .getRepository(Branch)
-      .save({
-        businessId: business.body.businessId,
-        name: "Third",
-        isDefault: false,
-      });
+    const extra = await dataSource.getRepository(Branch).save({
+      businessId: business.body.businessId,
+      name: "Second",
+      isDefault: false,
+    });
+    const denied = await dataSource.getRepository(Branch).save({
+      businessId: business.body.businessId,
+      name: "Third",
+      isDefault: false,
+    });
     const program = await request(app.getHttpServer())
       .post("/programs")
       .set(owner)

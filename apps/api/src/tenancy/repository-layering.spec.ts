@@ -15,6 +15,10 @@ describe("repository tenant scoping", () => {
       "audit/audit.repository.ts",
       "auth/auth.repository.ts",
       "ledger/ledger.repository.ts",
+      "registration/registration.repository.ts",
+      "billing/billing.repository.ts",
+      "dashboard/dashboard.repository.ts",
+      "billing/billing.repository.ts",
     ]);
     for (const file of files) {
       const source = readFileSync(join(root, file), "utf8");

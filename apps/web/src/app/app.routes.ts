@@ -1,14 +1,6 @@
 import { Routes } from '@angular/router';
+import { PUBLIC_ROUTES } from './public/public.routes';
 import { authGuard, guestGuard, roleGuard, rolesForMenuItem } from './auth/auth.guards';
-
-const placeholder = (title: string) => ({
-  path: title === 'Escáner' ? 'escaner' : title.toLowerCase(),
-  canActivate: [roleGuard],
-  data: { roles: rolesForMenuItem(title) },
-  loadComponent: () =>
-    import('./dashboard/section-placeholder').then((module) => module.SectionPlaceholder),
-  resolve: { title: () => title },
-});
 
 export const routes: Routes = [
   {
@@ -21,6 +13,7 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./auth/register').then((module) => module.Register),
   },
+  ...PUBLIC_ROUTES,
   {
     path: '',
     canActivate: [authGuard],
@@ -31,9 +24,27 @@ export const routes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./dashboard/home').then((module) => module.Home),
       },
-      placeholder('Clientes'),
-      placeholder('Movimientos'),
-      placeholder('Canjes'),
+      {
+        path: 'clientes',
+        canActivate: [roleGuard],
+        data: { roles: rolesForMenuItem('Clientes') },
+        loadChildren: () =>
+          import('./customers/customers.routes').then((module) => module.CUSTOMERS_ROUTES),
+      },
+      {
+        path: 'movimientos',
+        canActivate: [roleGuard],
+        data: { roles: rolesForMenuItem('Movimientos') },
+        loadChildren: () =>
+          import('./movements/movements.routes').then((module) => module.MOVEMENTS_ROUTES),
+      },
+      {
+        path: 'canjes',
+        canActivate: [roleGuard],
+        data: { roles: rolesForMenuItem('Canjes') },
+        loadChildren: () =>
+          import('./redemptions/redemptions.routes').then((module) => module.REDEMPTIONS_ROUTES),
+      },
       {
         path: 'escaner',
         canActivate: [roleGuard],
@@ -54,7 +65,13 @@ export const routes: Routes = [
         data: { roles: rolesForMenuItem('Sincronización') },
         loadChildren: () => import('./sync/sync.routes').then((module) => module.SYNC_ROUTES),
       },
-      { ...placeholder('Configuración'), path: 'configuracion' },
+      {
+        path: 'configuracion',
+        canActivate: [roleGuard],
+        data: { roles: rolesForMenuItem('Configuración') },
+        loadChildren: () =>
+          import('./settings/settings.routes').then((module) => module.SETTINGS_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

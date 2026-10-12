@@ -40,5 +40,10 @@ export class LoyaltyTransaction {
   @Column({ name: "actor_id", type: "char", length: 36 }) actorId!: string;
   @Column({ name: "idempotency_key", type: "varchar", length: 100 })
   idempotencyKey!: string;
-  @CreateDateColumn({ name: "created_at", type: "timestamp" }) createdAt!: Date;
+  @Column({
+    name: "created_at",
+    type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
+  })
+  createdAt!: Date;
 }

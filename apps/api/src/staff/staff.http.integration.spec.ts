@@ -23,7 +23,10 @@ describe("staff auth and management HTTP", () => {
     configureApp(app);
     await app.init();
     dataSource = new DataSource(
-      databaseOptions(new ConfigService({ ...process.env, NODE_ENV: "test" })),
+      databaseOptions(
+        new ConfigService({ ...process.env, NODE_ENV: "test" }),
+        process.env.DB_DATABASE_TEST!,
+      ),
     );
     await dataSource.initialize();
     await dataSource.runMigrations();
@@ -71,6 +74,10 @@ describe("staff auth and management HTTP", () => {
         password,
       })
       .expect(201);
+    await dataSource.query(
+      "UPDATE subscriptions s JOIN plans p ON p.name='Negocio' SET s.plan_id=p.id WHERE s.business_id=?",
+      [first.body.businessId],
+    );
     const ownerLogin = await request(app.getHttpServer())
       .post("/auth/login")
       .send({ email: ownerEmail, password })

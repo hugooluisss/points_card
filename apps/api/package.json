@@ -17,6 +17,7 @@
     "@nestjs/core": "^11.2.7",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.2.7",
+    "@nestjs/schedule": "^5.0.1",
     "@nestjs/typeorm": "^11.0.3",
     "@points-card/shared": "^1.0.0",
     "argon2": "^0.45.1",
@@ -24,8 +25,10 @@
     "class-validator": "^0.15.1",
     "dotenv": "^18.0.7",
     "mysql2": "^3.24.5",
+    "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "stripe": "^23.0.0",
     "typeorm": "^0.3.31"
   },
   "devDependencies": {

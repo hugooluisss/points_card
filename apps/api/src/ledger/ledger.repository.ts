@@ -13,6 +13,7 @@ import { Branch } from "../branches/entities/branch.entity";
 import { businessDayBounds } from "./business-day";
 import { WalletSyncRepository } from "../wallet-sync/wallet-sync.repository";
 import { IdempotencyExpectation, assertIdempotencyReplay } from "./idempotency";
+import { Clock } from "./clock";
 
 @Injectable()
 export class LedgerRepository {
@@ -27,6 +28,7 @@ export class LedgerRepository {
     private readonly dataSource: DataSource,
     private readonly tenant: TenantContext,
     private readonly walletSync: WalletSyncRepository,
+    private readonly clock: Clock,
   ) {}
   private get businessId() {
     return this.tenant.getBusinessId();
@@ -35,7 +37,10 @@ export class LedgerRepository {
     return this.programs.findOneBy({ id, businessId: this.businessId });
   }
   async accountByCode(cardCode: string) {
-    return this.accounts.findOneBy({ cardCode, businessId: this.businessId });
+    return this.accounts.findOneBy({
+      cardCode,
+      businessId: this.businessId,
+    });
   }
   async reward(id: string, programId: string) {
     return this.rewards.findOneBy({
@@ -83,6 +88,7 @@ export class LedgerRepository {
     work: (manager: EntityManager) => Promise<T>,
   ): Promise<T> {
     const execute = async (manager: EntityManager): Promise<T> => {
+      await manager.query("SET time_zone = '+00:00'");
       const previous = await this.transactionByKey(manager, key);
       if (!previous) return work(manager);
       const account = await manager
@@ -152,18 +158,18 @@ export class LedgerRepository {
   ) {
     const rows = await manager.query(
       `SELECT
-      (SELECT COUNT(*) FROM loyalty_transactions WHERE business_id = ? AND account_id = ? AND type = 'accumulate' AND created_at >= ? AND created_at < ?) AS card_count,
-      (SELECT COUNT(*) FROM loyalty_transactions WHERE business_id = ? AND actor_id = ? AND type = 'accumulate' AND created_at >= ? AND created_at < ?) AS staff_count,
+      (SELECT COUNT(*) FROM loyalty_transactions WHERE business_id = ? AND account_id = ? AND type = 'accumulate' AND UNIX_TIMESTAMP(created_at) >= ? AND UNIX_TIMESTAMP(created_at) < ?) AS card_count,
+      (SELECT COUNT(*) FROM loyalty_transactions WHERE business_id = ? AND actor_id = ? AND type = 'accumulate' AND UNIX_TIMESTAMP(created_at) >= ? AND UNIX_TIMESTAMP(created_at) < ?) AS staff_count,
       (SELECT MAX(UNIX_TIMESTAMP(t.created_at) * 1000) FROM loyalty_transactions t WHERE t.business_id = ? AND t.account_id = ? AND t.type = 'accumulate' AND NOT EXISTS (SELECT 1 FROM loyalty_transactions r WHERE r.reverses_transaction_id = t.id)) AS last_card_accumulation`,
       [
         this.businessId,
         accountId,
-        since,
-        until,
+        Math.floor(since.getTime() / 1000),
+        Math.floor(until.getTime() / 1000),
         this.businessId,
         actorId,
-        since,
-        until,
+        Math.floor(since.getTime() / 1000),
+        Math.floor(until.getTime() / 1000),
         this.businessId,
         accountId,
       ],
@@ -197,9 +203,20 @@ export class LedgerRepository {
     input: Partial<LoyaltyTransaction>,
   ) {
     const repo = manager.getRepository(LoyaltyTransaction);
-    return repo.save(
-      repo.create({ ...input, id: randomUUID(), businessId: this.businessId }),
+    const createdAt = this.clock.now();
+    const transaction = await repo.save(
+      repo.create({
+        ...input,
+        id: randomUUID(),
+        businessId: this.businessId,
+        createdAt,
+      }),
     );
+    await manager.query(
+      "UPDATE loyalty_transactions SET created_at = FROM_UNIXTIME(?) WHERE id = ? AND business_id = ?",
+      [Math.floor(createdAt.getTime() / 1000), transaction.id, this.businessId],
+    );
+    return transaction;
   }
   async saveAccount(
     manager: EntityManager,
@@ -217,9 +234,20 @@ export class LedgerRepository {
   }
   async insertRedemption(manager: EntityManager, input: Partial<Redemption>) {
     const repo = manager.getRepository(Redemption);
-    return repo.save(
-      repo.create({ ...input, id: randomUUID(), businessId: this.businessId }),
+    const createdAt = this.clock.now();
+    const redemption = await repo.save(
+      repo.create({
+        ...input,
+        id: randomUUID(),
+        businessId: this.businessId,
+        createdAt,
+      }),
     );
+    await manager.query(
+      "UPDATE redemptions SET created_at = FROM_UNIXTIME(?) WHERE id = ? AND business_id = ?",
+      [Math.floor(createdAt.getTime() / 1000), redemption.id, this.businessId],
+    );
+    return redemption;
   }
   async markRedemptionReversed(manager: EntityManager, transactionId: string) {
     await manager

@@ -1,0 +1,51 @@
+:host {
+  display: block;
+}
+@media (max-width: 640px) {
+  table,
+  thead,
+  tbody,
+  th,
+  tr {
+    display: block;
+  }
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  tbody tr {
+    padding: 0.75rem;
+  }
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 0;
+    padding: 0.4rem;
+  }
+  tbody td::before {
+    color: #64748b;
+    font-weight: 600;
+  }
+  tbody td:nth-child(1)::before {
+    content: 'Cliente';
+  }
+  tbody td:nth-child(2)::before {
+    content: 'Contacto';
+  }
+  tbody td:nth-child(3)::before {
+    content: 'Tarjeta';
+  }
+  tbody td:nth-child(4)::before {
+    content: 'Saldo';
+  }
+  tbody td:nth-child(5)::before {
+    content: 'Última visita';
+  }
+  tbody td:nth-child(6)::before {
+    content: 'Marketing';
+  }
+}

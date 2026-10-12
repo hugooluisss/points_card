@@ -10,6 +10,7 @@ import { AccumulationService } from "./accumulation.service";
 import { AdjustmentService } from "./adjustment.service";
 import { CardsService } from "./cards.service";
 import { Clock } from "./clock";
+import { ClockModule } from "./clock.module";
 import { LedgerController } from "./ledger.controller";
 import { LedgerRepository } from "./ledger.repository";
 import { LedgerReportsService } from "./ledger-reports.service";
@@ -18,6 +19,7 @@ import { LoyaltyAccount } from "./entities/loyalty-account.entity";
 import { LoyaltyTransaction } from "./entities/loyalty-transaction.entity";
 import { Redemption } from "./entities/redemption.entity";
 import { RedemptionService } from "./redemption.service";
+import { BillingModule } from "../billing/billing.module";
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { RedemptionService } from "./redemption.service";
       Branch,
     ]),
     WalletSyncModule,
+    ClockModule,
+    BillingModule,
   ],
   controllers: [LedgerController],
   providers: [
@@ -42,7 +46,6 @@ import { RedemptionService } from "./redemption.service";
     RedemptionService,
     AdjustmentService,
     RolesGuard,
-    Clock,
   ],
 })
 export class LedgerModule {}

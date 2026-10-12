@@ -7,10 +7,18 @@ import {
 import * as argon2 from "argon2";
 import { AuthUser, Role } from "@points-card/shared";
 import { StaffRepository } from "./staff.repository";
+import { PlanLimitsService } from "../billing/plan-limits.service";
+import { BillingAccessService } from "../billing/billing-access.service";
+import { TenantContext } from "../tenancy/tenant-context.service";
 
 @Injectable()
 export class StaffService {
-  constructor(private readonly staff: StaffRepository) {}
+  constructor(
+    private readonly staff: StaffRepository,
+    private readonly limits?: PlanLimitsService,
+    private readonly access?: BillingAccessService,
+    private readonly tenant?: TenantContext,
+  ) {}
   list() {
     return this.staff.list();
   }
@@ -21,6 +29,8 @@ export class StaffService {
     role: Role;
     branchIds: string[] | null;
   }) {
+    await this.access?.assertWritable(this.tenant!.getBusinessId());
+    await this.limits?.assertCanCreate("staff");
     if (
       input.branchIds &&
       (await this.staff.validBranchIds(input.branchIds)).length !==

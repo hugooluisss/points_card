@@ -5,74 +5,190 @@
       <h1 class="mt-1 text-3xl font-semibold tracking-tight">Hola, equipo</h1>
       <p class="mt-2 text-slate-700">Aquí tienes la actividad de tu programa de lealtad.</p>
     </div>
-    <span
-      class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"
-      >Últimos 30 días</span
+    <label class="text-sm font-semibold text-slate-700"
+      >Periodo
+      <select
+        class="ml-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5"
+        [value]="period()"
+        (change)="changePeriod($any($event.target).value)"
+      >
+        <option value="7d">Últimos 7 días</option>
+        <option value="30d">Últimos 30 días</option>
+        <option value="90d">Últimos 90 días</option>
+      </select></label
     >
   </div>
-  <section aria-label="Indicadores principales" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <app-kpi-card
-      title="Clientes"
-      value="—"
-      delta="Comienza invitando a tus clientes."
-      color="peach"
-    />
-    <app-kpi-card
-      title="Movimientos"
-      value="—"
-      delta="Aparecerán al iniciar la operación."
-      color="green"
-    />
-    <app-kpi-card
-      title="Canjes"
-      value="—"
-      delta="Aquí verás las recompensas canjeadas."
-      color="blue"
-    />
-    <app-kpi-card
-      title="Programas activos"
-      value="—"
-      delta="Configura tu primer programa."
-      color="mint"
-    />
-  </section>
-  <section class="mt-5 grid gap-5 xl:grid-cols-[1.35fr_.85fr]">
-    <article class="rounded-2xl bg-primary-800 p-6 text-white sm:p-7">
-      <p class="text-sm text-teal-100">Actividad del programa</p>
-      <h2 class="mt-1 text-2xl font-semibold">Movimientos</h2>
-      <div
-        class="mt-7 grid min-h-48 place-items-center rounded-xl border border-white/20 text-center"
+  @if (canFilterBranch()) {
+    <label class="mb-5 block text-sm"
+      >Sucursal
+      <select
+        class="ml-2 rounded-lg border px-3 py-2"
+        [value]="branchId()"
+        (change)="changeBranch($any($event.target).value)"
       >
-        <p>
-          <span class="block text-lg font-semibold">Aún no hay actividad</span>
-          <span class="mt-2 block text-sm text-teal-100"
-            >Los datos aparecerán cuando tu equipo comience a atender clientes.</span
-          >
-        </p>
-      </div>
-    </article>
-    <article class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
-      <p class="text-sm text-slate-600">Tu programa</p>
-      <h2 class="mt-1 text-xl font-semibold">Siguiente paso</h2>
-      <p class="mt-5 text-sm leading-6 text-slate-700">
-        Configura tu primer programa para empezar a sumar clientes y movimientos.
-      </p>
-      <a
-        routerLink="/programas"
-        class="mt-5 inline-flex rounded-xl bg-primary-800 px-4 py-2.5 text-sm font-semibold text-white"
-        >Crear un programa →</a
-      >
-    </article>
-  </section>
-  <section class="mt-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
-    <p class="text-sm text-slate-600">Lo más reciente</p>
-    <h2 class="mt-1 text-xl font-semibold">Actividad reciente</h2>
-    <div class="mt-5 rounded-xl bg-slate-50 p-5">
-      <p class="font-semibold">Aún no hay actividad</p>
-      <p class="mt-1 text-sm text-slate-700">
-        Cuando tus clientes participen, verás aquí sus movimientos.
-      </p>
+        <option value="">Todas las sucursales</option>
+        @for (branch of branches(); track branch.id) {
+          <option [value]="branch.id">{{ branch.name }}</option>
+        }
+      </select></label
+    >
+  }
+  @if (loading()) {
+    <p role="status" class="rounded-2xl bg-white p-8 text-slate-600">Cargando resumen…</p>
+  } @else if (error()) {
+    <div role="alert" class="rounded-2xl border border-red-200 bg-white p-6 text-red-800">
+      {{ error() }}
+      <button class="ml-3 rounded border px-3 py-1" (click)="load()">Reintentar</button>
     </div>
-  </section>
+  } @else if (summary(); as data) {
+    <section aria-label="Indicadores principales" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <app-kpi-card
+        title="Clientes registrados"
+        [value]="data.kpis.registeredCustomers.value"
+        [delta]="delta(data.kpis.registeredCustomers)"
+        color="peach"
+      />
+      <app-kpi-card
+        title="Pases emitidos"
+        [value]="data.kpis.issuedPasses.value"
+        [delta]="
+          data.savedPassesAvailable ? delta(data.kpis.issuedPasses) : 'Guardado no disponible'
+        "
+        color="green"
+      />
+      <app-kpi-card
+        title="Operaciones"
+        [value]="data.kpis.operations.value"
+        [delta]="delta(data.kpis.operations)"
+        color="blue"
+      />
+      <app-kpi-card
+        title="Canjes"
+        [value]="data.kpis.redemptions.value"
+        [delta]="delta(data.kpis.redemptions)"
+        color="mint"
+      />
+    </section>
+    @if (!data.recent.length) {
+      <p class="mt-4 rounded-xl bg-teal-50 p-4 text-teal-900">
+        Aún no hay actividad. Invita a tus clientes y registra la primera operación.
+      </p>
+    }
+    <section class="mt-5 grid gap-5 xl:grid-cols-[1.35fr_.85fr]">
+      <article class="rounded-2xl bg-primary-800 p-6 text-white sm:p-7">
+        <p class="text-sm text-teal-100">Actividad del programa</p>
+        <h2 class="mt-1 text-2xl font-semibold">Operaciones por día</h2>
+        @if (data.operationsPerDay.length) {
+          <div
+            class="mt-6 flex h-56 items-end gap-2 overflow-x-auto border-b border-white/30 pb-2"
+            role="img"
+            aria-label="Gráfica de operaciones por día"
+          >
+            @for (day of data.operationsPerDay; track day.date) {
+              <div
+                class="flex min-w-8 flex-1 flex-col items-center justify-end gap-2"
+                [attr.aria-label]="day.date + ': ' + day.count + ' operaciones'"
+              >
+                <span class="text-xs text-white">{{ day.count }}</span
+                ><span
+                  class="w-full max-w-10 rounded-t bg-amber-100"
+                  [style.height.%]="(day.count / maxOperations()) * 75 + 5"
+                ></span
+                ><span class="text-[10px] text-teal-100">{{ day.date | slice: 5 }}</span>
+              </div>
+            }
+          </div>
+          <ul class="sr-only">
+            @for (day of data.operationsPerDay; track day.date) {
+              <li>{{ day.date }}: {{ day.count }} operaciones</li>
+            }
+          </ul>
+        } @else {
+          <p class="mt-7 rounded-xl border border-white/20 p-8 text-center text-teal-100">
+            Aún no hay operaciones en este periodo.
+          </p>
+        }
+      </article>
+      <article class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
+        <p class="text-sm text-slate-600">Indicadores del programa</p>
+        <h2 class="mt-1 text-xl font-semibold">Visitas y recompensas</h2>
+        <div class="mt-5 border-b pb-4">
+          <p class="text-3xl font-semibold">
+            {{ metrics() ? rate(metrics()!.repeatVisitRate) : '—' }}
+          </p>
+          <p class="font-semibold">Visitas recurrentes</p>
+          <p class="text-sm text-slate-600">
+            Clientes con dos o más operaciones válidas entre quienes tuvieron al menos una.
+          </p>
+        </div>
+        <div class="pt-4">
+          <p class="text-3xl font-semibold">
+            {{ metrics() ? rate(metrics()!.redemptionRate) : '—' }}
+          </p>
+          <p class="font-semibold">Tasa de canje</p>
+          <p class="text-sm text-slate-600">
+            Canjes realizados entre recompensas que estuvieron disponibles en el periodo.
+          </p>
+        </div>
+        <p
+          class="mt-4 rounded-xl bg-slate-50 p-3 text-sm"
+          [title]="'Wallet no confirma cuándo el cliente guarda el pase; se muestran pases emitidos'"
+        >
+          <strong>Pases guardados:</strong>
+          {{
+            data.savedPassesAvailable && metrics()?.savedPasses !== null
+              ? metrics()?.savedPasses
+              : 'No disponible'
+          }}
+          @if (!data.savedPassesAvailable || metrics()?.savedPasses === null) {
+            <span
+              aria-label="Wallet no confirma cuándo el cliente guarda el pase; se muestran pases emitidos"
+              >ⓘ</span
+            >
+          }
+        </p>
+      </article>
+    </section>
+    <section class="mt-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-sm text-slate-600">Lo más reciente</p>
+          <h2 class="mt-1 text-xl font-semibold">Actividad reciente</h2>
+        </div>
+        <a routerLink="/movimientos" class="font-semibold text-teal-800 underline"
+          >Ver movimientos</a
+        >
+      </div>
+      @if (data.recent.length) {
+        <ul class="mt-4 divide-y divide-slate-100">
+          @for (item of data.recent; track item.id) {
+            <li class="flex flex-wrap items-center gap-3 py-4">
+              <span
+                class="grid h-10 w-10 place-items-center rounded-xl bg-amber-50"
+                aria-hidden="true"
+                >{{ item.type === 'redeem' ? '✧' : '⇄' }}</span
+              >
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold">
+                  {{ item.customerName || item.maskedCard }} · {{ label(item.type) }}
+                </p>
+                <p class="text-sm text-slate-600">
+                  {{ item.programName }} · {{ item.staffName }} · {{ item.branchName }}
+                </p>
+              </div>
+              <strong>{{ amount(item) }}</strong
+              ><time class="w-full text-xs text-slate-500 sm:w-auto">{{
+                date(item.createdAt)
+              }}</time>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="mt-5 rounded-xl bg-slate-50 p-5 text-slate-700">
+          Cuando tus clientes participen, verás aquí sus movimientos.
+        </p>
+      }
+    </section>
+  }
   <footer class="py-7 text-center text-xs text-slate-600">Points Card · Panel de lealtad</footer>
 </main>
