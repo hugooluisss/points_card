@@ -60,3 +60,12 @@
 | Club | 🟢 Verde | [HIPOTESIS] Adecuado como Loyalty si hay puntos/nivel; Generic si es solo una credencial de membresía personalizada. El nombre “club” no es un tipo formal de pase. |
 | Actualización de saldo | 🟢 Verde | [HECHO] `loyaltyPoints.balance` puede actualizarse con `PATCH`/`UPDATE` tras el guardado; la notificación de cambio admite ese campo sujeto a habilitación del usuario y cuota. [Guía](https://developers.google.com/wallet/retail/loyalty-cards/use-cases/updates), consulta: 2026-10-11. |
 | Notificaciones | 🟡 Amarillo | [HECHO] Hay mensajes de emisor, notificaciones por actualización de campos, avisos temporales en Generic y geonotificaciones, con requisitos y cuotas descritos arriba. [Guía](https://developers.google.com/wallet/retail/loyalty-cards/use-cases/trigger-push-notifications), consulta: 2026-10-11. [SUPUESTO] La documentación no fija países ni frecuencia garantizada para geoavisos. |
+
+## Pruebas en dispositivo (Android, cuenta de prueba, 2026-10-15)
+
+Evidencia: proveedor real del POC (`poc/wallet`) contra el Issuer de demo; reportado por el titular de la cuenta, sin captura archivada todavía. Modelo y versión del dispositivo: sin registrar (tarea 1.1).
+
+- [HECHO] Pase de sellos (tipo Generic) guardado en el teléfono y con código QR visible. El QR contiene solo el identificador opaco de la tarjeta (verificado en el payload emitido). Pendiente: leerlo con la cámara de un navegador móvil (3.4).
+- [HECHO] `PATCH` del módulo de texto de progreso aceptado por la API (HTTP 201, ~0.6 s, 16:29:26). [HECHO] El cambio a "3 of 10" se vio en el pase "muy poco" tiempo después, según el titular; retraso exacto sin cronometrar (3.5).
+- [HECHO] Mensaje `TEXT_AND_NOTIFY` aceptado por la API (16:47:36) y la notificación **llegó al teléfono**, según el titular. [HECHO] El texto del mensaje ("Prueba de aviso: llevas 3 de 10 sellos") se ve dentro del pase al abrirlo (3.8). [SUPUESTO] Retraso de la notificación no cronometrado.
+- Sin probar: pases de puntos y club en dispositivo (3.2), modo sin conexión (3.6), aviso por cambio de campo y geoavisos (5.4).
