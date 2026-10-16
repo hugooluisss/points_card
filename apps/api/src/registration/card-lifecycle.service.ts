@@ -30,6 +30,10 @@ export class CardLifecycleService {
       account.businessId,
       account.id,
       cardCode,
+      await this.registrations.walletPassDetails(
+        account.businessId,
+        account.id,
+      ),
     );
     return { cardCode, balance: account.balance, passes };
   }

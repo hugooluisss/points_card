@@ -14,6 +14,7 @@ import { WalletPass } from "../wallet-sync/entities/wallet-pass.entity";
 import { TenantContext } from "../tenancy/tenant-context.service";
 import { UpdateRegistrationSettingsDto } from "./dto/update-registration-settings.dto";
 import { Clock } from "../ledger/clock";
+import { cardState } from "../ledger/card-state";
 
 @Injectable()
 // Allow-listed: public lookups use public_code; authenticated business writes explicitly scope by tenant ID.
@@ -271,15 +272,30 @@ export class RegistrationRepository {
   async activeCustomerAccounts(businessId: string, customerId: string) {
     return this.accounts.findBy({ businessId, customerId, status: "active" });
   }
-  async passesForAccount(businessId: string, accountId: string) {
-    const passes = await this.passes.findBy({
-      accountId,
+  async walletPassDetails(businessId: string, accountId: string) {
+    const account = await this.accounts.findOneByOrFail({
+      id: accountId,
       businessId,
-      status: "issued",
     });
-    return passes.map(({ platform, externalRef }) => ({
-      platform,
-      saveUrl: externalRef ?? "",
-    }));
+    const program = await this.programs.findOneByOrFail({
+      id: account.programId,
+      businessId,
+    });
+    const rewards: Array<{ cost: number }> = await this.source.query(
+      "SELECT cost FROM rewards WHERE business_id = ? AND program_id = ? AND is_active = 1",
+      [businessId, program.id],
+    );
+    const goal = program.mode === "stamps" ? program.stampsGoal : null;
+    const state = cardState(
+      program.mode,
+      account.balance,
+      goal,
+      rewards.map(({ cost }) => Number(cost)),
+    );
+    return {
+      mode: program.mode,
+      balance: account.balance,
+      ...state,
+    };
   }
 }

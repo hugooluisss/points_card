@@ -46,6 +46,19 @@ export function validateEnvironment(config: Record<string, unknown>) {
   ) {
     throw new Error("DB_PORT must be a valid port number");
   }
+  if (
+    config.WALLET_PASS_PROVIDER !== undefined &&
+    !["simulated", "google"].includes(String(config.WALLET_PASS_PROVIDER))
+  )
+    throw new Error("WALLET_PASS_PROVIDER must be simulated or google");
+  if (config.WALLET_PASS_PROVIDER === "google") {
+    for (const key of [
+      "GOOGLE_WALLET_ISSUER_ID",
+      "GOOGLE_WALLET_KEY_PATH",
+    ] as const)
+      if (!config[key] || !String(config[key]).trim())
+        throw new Error(`Missing environment variable ${key}`);
+  }
   if (config.PUBLIC_WEB_URL !== undefined) {
     try {
       const url = new URL(String(config.PUBLIC_WEB_URL));

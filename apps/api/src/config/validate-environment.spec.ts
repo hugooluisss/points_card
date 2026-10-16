@@ -14,6 +14,17 @@ const validConfig = {
 describe("validateEnvironment", () => {
   it("returns valid config and rejects unsafe values", () => {
     expect(validateEnvironment(validConfig)).toBe(validConfig);
+    expect(() =>
+      validateEnvironment({ ...validConfig, WALLET_PASS_PROVIDER: "google" }),
+    ).toThrow("Missing environment variable GOOGLE_WALLET_ISSUER_ID");
+    expect(
+      validateEnvironment({
+        ...validConfig,
+        WALLET_PASS_PROVIDER: "google",
+        GOOGLE_WALLET_ISSUER_ID: "issuer",
+        GOOGLE_WALLET_KEY_PATH: "/key.json",
+      }),
+    ).toMatchObject({ WALLET_PASS_PROVIDER: "google" });
     expect(() => validateEnvironment({ ...validConfig, DB_PORT: "0" })).toThrow(
       "DB_PORT must be a valid port number",
     );

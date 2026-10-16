@@ -5,7 +5,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { ConfigService } from "@nestjs/config";
 import { DataSource } from "typeorm";
-import { Stripe } from "stripe";
+import Stripe from "stripe";
 import request from "supertest";
 import { AppModule } from "../app.module";
 import { configureApp } from "../configure-app";

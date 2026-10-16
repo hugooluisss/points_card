@@ -44,8 +44,12 @@ export class CardRecoveryService {
     const account = accounts[0];
     if (!account)
       throw new GoneException("No hay una tarjeta activa para recuperar.");
-    const passes: RegistrationPass[] =
-      await this.registrations.passesForAccount(business.id, account.id);
+    const passes: RegistrationPass[] = await this.wallet.issue(
+      business.id,
+      account.id,
+      account.cardCode,
+      await this.registrations.walletPassDetails(business.id, account.id),
+    );
     return { businessName: business.name, cardCode: account.cardCode, passes };
   }
 }

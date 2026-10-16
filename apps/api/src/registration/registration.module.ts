@@ -23,6 +23,10 @@ import { RECOVERY_NOTIFIER } from "./recovery-notifier";
 import { SimulatedRecoveryNotifier } from "./simulated-recovery-notifier";
 import { WALLET_PASS_PROVIDER } from "../wallet-pass/wallet-pass-provider";
 import { SimulatedWalletPassProvider } from "../wallet-pass/simulated-wallet-pass.provider";
+import { GoogleWalletPassProvider } from "../wallet-pass/google-wallet-pass.provider";
+import { GoogleWalletModule } from "../wallet-pass/google-wallet.module";
+import { ConfigService } from "@nestjs/config";
+import { GOOGLE_WALLET_PROVIDER_NAME } from "../wallet-pass/wallet-pass-provider";
 import { BillingModule } from "../billing/billing.module";
 
 @Module({
@@ -39,6 +43,7 @@ import { BillingModule } from "../billing/billing.module";
     ]),
     ClockModule,
     BillingModule,
+    GoogleWalletModule,
   ],
   controllers: [RegistrationController],
   providers: [
@@ -50,7 +55,24 @@ import { BillingModule } from "../billing/billing.module";
     CardLifecycleService,
     RateLimiter,
     RolesGuard,
-    { provide: WALLET_PASS_PROVIDER, useClass: SimulatedWalletPassProvider },
+    SimulatedWalletPassProvider,
+    GoogleWalletPassProvider,
+    {
+      provide: WALLET_PASS_PROVIDER,
+      inject: [
+        ConfigService,
+        SimulatedWalletPassProvider,
+        GoogleWalletPassProvider,
+      ],
+      useFactory: (
+        config: ConfigService,
+        simulated: SimulatedWalletPassProvider,
+        google: GoogleWalletPassProvider,
+      ) =>
+        config.get("WALLET_PASS_PROVIDER") === GOOGLE_WALLET_PROVIDER_NAME
+          ? google
+          : simulated,
+    },
     { provide: RECOVERY_NOTIFIER, useClass: SimulatedRecoveryNotifier },
   ],
 })

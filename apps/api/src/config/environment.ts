@@ -12,6 +12,8 @@ export class Environment {
   PUBLIC_WEB_URL?: string;
   RECOVERY_NOTIFIER?: string;
   WALLET_PASS_PROVIDER?: string;
+  GOOGLE_WALLET_ISSUER_ID?: string;
+  GOOGLE_WALLET_KEY_PATH?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   BILLING_RETURN_URL?: string;

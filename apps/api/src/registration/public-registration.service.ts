@@ -182,10 +182,20 @@ export class PublicRegistrationService {
       manageTokenHash: manageHash,
     });
     const passes: RegistrationPass[] = [];
-    for (const account of created.accounts)
-      passes.push(
-        ...(await this.wallet.issue(business.id, account.id, account.cardCode)),
+    for (const account of created.accounts) {
+      const details = await this.registrations.walletPassDetails(
+        business.id,
+        account.id,
       );
+      passes.push(
+        ...(await this.wallet.issue(
+          business.id,
+          account.id,
+          account.cardCode,
+          details,
+        )),
+      );
+    }
     if (manageRaw) {
       const destination = values.email ?? values.phone ?? "";
       await this.notifier.send(
