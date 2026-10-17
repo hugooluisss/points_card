@@ -46,6 +46,12 @@ export class DashboardRepository {
     const branches = this.branches(branchId);
     const branchSql = branchFilter("t.branch_id", branches);
     const branchParams = branches ?? [];
+    const previousParams = [
+      businessId,
+      previousStart,
+      previousEnd,
+      ...branchParams,
+    ];
     // Registrations and issued passes have no branch column, so scope via related account activity.
     const customerBranch =
       branches === null
@@ -69,107 +75,91 @@ export class DashboardRepository {
                 AND pt.branch_id IN (${branches.map(() => "?").join(",")})
             )`
           : " AND 1=0";
-    const transactionParams = [businessId, start, end, ...branchParams];
-    const previousParams = [
-      businessId,
-      previousStart,
-      previousEnd,
-      ...branchParams,
-    ];
     const [
       customerRows,
       passRows,
       operationRows,
+      prevOperationRows,
       redemptionRows,
       prevCustomerRows,
       prevPassRows,
-      prevOperationRows,
       prevRedemptionRows,
-      byDay,
       recent,
     ] = await Promise.all([
       this.db.query(
-        `SELECT COUNT(*) AS total FROM customers
+        `SELECT COUNT(*) AS total FROM customers FORCE INDEX (ix_customers_business_created)
         WHERE business_id = ? AND created_at >= ? AND created_at < ?${customerBranch}`,
         [businessId, start, end, ...branchParams],
       ),
       this.db.query(
-        `SELECT COUNT(*) AS total FROM wallet_passes
+        `SELECT COUNT(*) AS total FROM wallet_passes FORCE INDEX (ix_wallet_passes_business_created)
         WHERE business_id = ? AND created_at >= ? AND created_at < ?${passBranch}`,
         [businessId, start, end, ...branchParams],
-      ),
-      this.db.query(
-        `SELECT COUNT(*) AS total
-        FROM loyalty_transactions t
-        WHERE t.business_id = ? AND t.created_at >= ? AND t.created_at < ?
-          AND t.type IN ('accumulate','redeem','adjust')${branchSql}
-          AND NOT EXISTS (
-            SELECT 1 FROM loyalty_transactions r
-            WHERE r.business_id=t.business_id AND r.reverses_transaction_id=t.id
-          )`,
-        transactionParams,
-      ),
-      this.db.query(
-        `SELECT COUNT(*) AS total
-        FROM redemptions r
-        JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id
-        WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?
-          AND r.status='completed'${branchSql}`,
-        transactionParams,
-      ),
-      this.db.query(
-        `SELECT COUNT(*) AS total FROM customers
-        WHERE business_id = ? AND created_at >= ? AND created_at < ?${customerBranch}`,
-        [businessId, previousStart, previousEnd, ...branchParams],
-      ),
-      this.db.query(
-        `SELECT COUNT(*) AS total FROM wallet_passes
-        WHERE business_id = ? AND created_at >= ? AND created_at < ?${passBranch}`,
-        [businessId, previousStart, previousEnd, ...branchParams],
-      ),
-      this.db.query(
-        `SELECT COUNT(*) AS total
-        FROM loyalty_transactions t
-        WHERE t.business_id = ? AND t.created_at >= ? AND t.created_at < ?
-          AND t.type IN ('accumulate','redeem','adjust')${branchSql}
-          AND NOT EXISTS (
-            SELECT 1 FROM loyalty_transactions r
-            WHERE r.business_id=t.business_id AND r.reverses_transaction_id=t.id
-          )`,
-        previousParams,
-      ),
-      this.db.query(
-        `SELECT COUNT(*) AS total
-        FROM redemptions r
-        JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id
-        WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?
-          AND r.status='completed'${branchSql}`,
-        previousParams,
       ),
       this.db.query(
         `SELECT t.created_at, COUNT(*) AS count
-        FROM loyalty_transactions t
-        WHERE t.business_id=? AND t.created_at>=? AND t.created_at<?
+        FROM loyalty_transactions t FORCE INDEX (ix_transactions_metrics_period)
+        LEFT JOIN loyalty_transactions r FORCE INDEX (ix_transactions_reversal_business)
+          ON r.business_id=t.business_id AND r.reverses_transaction_id=t.id
+        WHERE t.business_id = ? AND t.created_at >= ? AND t.created_at < ?
           AND t.type IN ('accumulate','redeem','adjust')${branchSql}
-          AND NOT EXISTS (
-            SELECT 1 FROM loyalty_transactions r
-            WHERE r.business_id=t.business_id AND r.reverses_transaction_id=t.id
-          )
+          AND r.id IS NULL
         GROUP BY t.created_at`,
-        transactionParams,
+        [businessId, start, end, ...branchParams],
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total
+        FROM loyalty_transactions t FORCE INDEX (ix_transactions_metrics_period)
+        LEFT JOIN loyalty_transactions r FORCE INDEX (ix_transactions_reversal_business)
+          ON r.business_id=t.business_id AND r.reverses_transaction_id=t.id
+        WHERE t.business_id = ? AND t.created_at >= ? AND t.created_at < ?
+          AND t.type IN ('accumulate','redeem','adjust')${branchSql}
+          AND r.id IS NULL`,
+        previousParams,
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total FROM redemptions r FORCE INDEX (ix_redemptions_business_created)
+        ${branches === null ? "" : "JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id"}
+        WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?
+          AND r.status='completed'${branches === null ? "" : branchSql}`,
+        [businessId, start, end, ...branchParams],
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total FROM customers FORCE INDEX (ix_customers_business_created)
+        WHERE business_id = ? AND created_at >= ? AND created_at < ?${customerBranch}`,
+        [businessId, previousStart, previousEnd, ...branchParams],
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total FROM wallet_passes FORCE INDEX (ix_wallet_passes_business_created)
+        WHERE business_id = ? AND created_at >= ? AND created_at < ?${passBranch}`,
+        [businessId, previousStart, previousEnd, ...branchParams],
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total
+        FROM redemptions r FORCE INDEX (ix_redemptions_business_created)
+        ${branches === null ? "" : "JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id"}
+        WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?
+          AND r.status='completed'${branches === null ? "" : branchSql}`,
+        [businessId, previousStart, previousEnd, ...branchParams],
       ),
       this.activity(start, end, 10, 0, branchId),
     ]);
+    const currentTotal = Number(
+      operationRows.reduce(
+        (sum: number, row: any) => sum + Number(row.count),
+        0,
+      ),
+    );
     return {
       customerRows,
       passRows,
-      operationRows,
+      operationRows: [{ total: currentTotal }],
       redemptionRows,
       prevCustomerRows,
       prevPassRows,
       prevOperationRows,
       prevRedemptionRows,
-      byDay,
+      byDay: operationRows,
       recent,
     };
   }
@@ -212,7 +202,7 @@ export class DashboardRepository {
         CASE WHEN c.status='anonymized' THEN 'Cliente anonimizado' ELSE c.name END AS customerName,
         a.card_code AS cardCode, t.amount, p.name AS programName,
         s.name AS staffName, b.name AS branchName, t.created_at AS createdAt
-      FROM loyalty_transactions t
+      FROM loyalty_transactions t FORCE INDEX (ix_transactions_business_created)
       JOIN loyalty_accounts a ON a.id=t.account_id AND a.business_id=t.business_id
       LEFT JOIN customers c ON c.id=a.customer_id AND c.business_id=a.business_id
       JOIN programs p ON p.id=t.program_id AND p.business_id=t.business_id
@@ -279,11 +269,11 @@ export class DashboardRepository {
     const branchFilterSql = branchFilter("t.branch_id", branches);
     const params = [businessId, start, end, ...(branches ?? [])];
     const rows = await this.db.query(
-      `SELECT r.id,
+      `SELECT STRAIGHT_JOIN r.id,
         CASE WHEN c.status='anonymized' THEN 'Cliente anonimizado' ELSE c.name END AS customerName,
         a.card_code AS cardCode, w.name AS rewardName, ABS(t.amount) AS cost, r.status,
         b.name AS branchName, s.name AS staffName, r.created_at AS createdAt
-      FROM redemptions r
+      FROM redemptions r FORCE INDEX (ix_redemptions_business_created)
       JOIN loyalty_accounts a ON a.id=r.account_id AND a.business_id=r.business_id
       LEFT JOIN customers c ON c.id=a.customer_id AND c.business_id=a.business_id
       JOIN rewards w ON w.id=r.reward_id AND w.business_id=r.business_id
@@ -295,10 +285,13 @@ export class DashboardRepository {
       [...params, limit, offset],
     );
     const [count] = await this.db.query(
-      `SELECT COUNT(*) AS total
-      FROM redemptions r
-      JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id
-      WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?${branchFilterSql}`,
+      branches === null
+        ? `SELECT COUNT(*) AS total FROM redemptions r
+          WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?`
+        : `SELECT COUNT(*) AS total
+          FROM redemptions r
+          JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id
+          WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?${branchFilterSql}`,
       params,
     );
     return {
@@ -514,84 +507,100 @@ export class DashboardRepository {
                 AND pt.branch_id IN (${branches.map(() => "?").join(",")})
             )`
           : " AND 1=0";
-    const [registered] = await this.db.query(
-      `SELECT COUNT(*) AS total FROM customers
+    const [
+      registeredRows,
+      issuedRows,
+      customerActivityRows,
+      redemptionRows,
+      rewardRows,
+      openingBalances,
+      periodLedger,
+    ] = await Promise.all([
+      this.db.query(
+        `SELECT COUNT(*) AS total FROM customers FORCE INDEX (ix_customers_business_created)
       WHERE business_id=? AND created_at>=? AND created_at<?${customerBranch}`,
-      [businessId, start, end, ...(branches ?? [])],
-    );
-    const [issued] = await this.db.query(
-      `SELECT COUNT(*) AS total FROM wallet_passes
+        [businessId, start, end, ...(branches ?? [])],
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total FROM wallet_passes FORCE INDEX (ix_wallet_passes_business_created)
       WHERE business_id=? AND created_at>=? AND created_at<?${passBranch}`,
-      [businessId, start, end, ...(branches ?? [])],
-    );
-    const [active] = await this.db.query(
-      `SELECT COUNT(DISTINCT a.customer_id) AS total
-      FROM loyalty_transactions t
+        [businessId, start, end, ...(branches ?? [])],
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS active, SUM(accumulations>=2) AS repeatCustomers
+      FROM (
+        SELECT a.customer_id, SUM(t.type='accumulate') AS accumulations
+        FROM loyalty_transactions t FORCE INDEX (ix_transactions_metrics_period)
       JOIN loyalty_accounts a ON a.id=t.account_id AND a.business_id=t.business_id
+      LEFT JOIN loyalty_transactions r FORCE INDEX (ix_transactions_reversal_business)
+        ON r.business_id=t.business_id AND r.reverses_transaction_id=t.id
       WHERE t.business_id=? AND t.created_at>=? AND t.created_at<?
         AND t.type IN ('accumulate','redeem','adjust') AND a.customer_id IS NOT NULL${branchSql}
-        AND NOT EXISTS (
-          SELECT 1 FROM loyalty_transactions r
-          WHERE r.business_id=t.business_id AND r.reverses_transaction_id=t.id
-        )`,
-      params,
-    );
-    const [repeat] = await this.db.query(
-      `SELECT COUNT(*) AS total FROM (
-        SELECT a.customer_id
-        FROM loyalty_transactions t
-        JOIN loyalty_accounts a ON a.id=t.account_id AND a.business_id=t.business_id
-        WHERE t.business_id=? AND t.created_at>=? AND t.created_at<?
-          AND t.type='accumulate' AND a.customer_id IS NOT NULL${branchSql}
-          AND NOT EXISTS (
-            SELECT 1 FROM loyalty_transactions r
-            WHERE r.business_id=t.business_id AND r.reverses_transaction_id=t.id
-          )
-        GROUP BY a.customer_id HAVING COUNT(*)>=2
-      ) x`,
-      params,
-    );
-    const [redemptions] = await this.db.query(
-      `SELECT COUNT(*) AS total
-      FROM redemptions r
+        AND r.id IS NULL
+        GROUP BY a.customer_id
+      ) customer_activity`,
+        params,
+      ),
+      this.db.query(
+        `SELECT COUNT(*) AS total
+        FROM redemptions r FORCE INDEX (ix_redemptions_business_created)
       JOIN loyalty_transactions t ON t.id=r.transaction_id AND t.business_id=r.business_id
       WHERE r.business_id=? AND r.created_at>=? AND r.created_at<?
         AND r.status='completed'${branchSql}`,
-      params,
+        params,
+      ),
+      this.db.query(
+        "SELECT program_id,MIN(cost) AS cost FROM rewards WHERE business_id=? AND is_active=1 GROUP BY program_id",
+        [businessId],
+      ),
+      this.db.query(
+        `SELECT account_id,SUM(amount) AS balance FROM loyalty_transactions
+        FORCE INDEX (ix_transactions_eligibility_period)
+        WHERE business_id=? AND created_at<? GROUP BY account_id`,
+        [businessId, start],
+      ),
+      this.db.query(
+        `SELECT account_id,program_id,branch_id,created_at,id,amount FROM loyalty_transactions
+        FORCE INDEX (ix_transactions_eligibility_period)
+        WHERE business_id=? AND created_at>=? AND created_at<?
+        ORDER BY account_id,created_at,id`,
+        [businessId, start, end],
+      ),
+    ]);
+    const balances = new Map<string, number>(
+      openingBalances.map((row: any) => [row.account_id, Number(row.balance)]),
     );
-    // Window balances count transitions across the cheapest active reward (today's catalog).
-    const eligibleBranch = branchFilter("l.branch_id", branches);
-    const [eligible] = await this.db.query(
-      `WITH reward_cost AS (
-        SELECT program_id, MIN(cost) AS cost FROM rewards
-        WHERE business_id=? AND is_active=1 GROUP BY program_id
-      ), ledger AS (
-        SELECT t.account_id, t.program_id, t.branch_id, t.created_at, t.id,
-          SUM(t.amount) OVER (
-            PARTITION BY t.account_id ORDER BY t.created_at, t.id
-            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-          ) AS before_balance,
-          SUM(t.amount) OVER (
-            PARTITION BY t.account_id ORDER BY t.created_at, t.id
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-          ) AS after_balance
-        FROM loyalty_transactions t
-        WHERE t.business_id=? AND t.created_at<?
+    const rewardCosts = new Map<string, number>(
+      rewardRows.map((row: any) => [row.program_id, Number(row.cost)]),
+    );
+    const visibleBranches = branches === null ? null : new Set(branches);
+    let eligibleEvents = 0;
+    for (const row of periodLedger as any[]) {
+      const before = balances.get(row.account_id) ?? 0;
+      const after = before + Number(row.amount);
+      const cost = rewardCosts.get(row.program_id);
+      if (
+        cost !== undefined &&
+        before < cost &&
+        after >= cost &&
+        (visibleBranches === null || visibleBranches.has(row.branch_id))
       )
-      SELECT COUNT(*) AS total
-      FROM ledger l JOIN reward_cost rc ON rc.program_id=l.program_id
-      WHERE l.created_at>=? AND l.created_at<?${eligibleBranch}
-        AND COALESCE(l.before_balance,0)<rc.cost AND l.after_balance>=rc.cost`,
-      [businessId, businessId, end, start, end, ...(branches ?? [])],
-    );
+        eligibleEvents++;
+      balances.set(row.account_id, after);
+    }
+    const registered = registeredRows[0];
+    const issued = issuedRows[0];
+    const active = customerActivityRows[0].active;
+    const repeat = customerActivityRows[0].repeatCustomers;
+    const redemptions = redemptionRows[0];
     return {
       registrations: Number(registered.total),
       issuedPasses: Number(issued.total),
-      activeCustomers: Number(active.total),
-      repeatCustomers: Number(repeat.total),
+      activeCustomers: Number(active),
+      repeatCustomers: Number(repeat),
       redemptions: Number(redemptions.total),
-      eligibleEvents: Number(eligible.total),
-      activeCustomersCount: Number(active.total),
+      eligibleEvents,
+      activeCustomersCount: Number(active),
       branchId,
     };
   }
@@ -655,12 +664,12 @@ export class DashboardRepository {
         await queryRunner.connect();
         try {
           const rows = await queryRunner.stream(
-            `SELECT t.type,
+            `SELECT STRAIGHT_JOIN t.type,
               CASE WHEN c.status='anonymized'
                 THEN 'Cliente anonimizado' ELSE c.name END AS customerName,
               a.card_code AS cardCode, t.amount, p.name AS programName,
               s.name AS staffName, b.name AS branchName, t.created_at AS createdAt
-            FROM loyalty_transactions t
+            FROM loyalty_transactions t FORCE INDEX (ix_transactions_business_created)
             JOIN loyalty_accounts a ON a.id=t.account_id AND a.business_id=t.business_id
             LEFT JOIN customers c ON c.id=a.customer_id AND c.business_id=a.business_id
             JOIN programs p ON p.id=t.program_id AND p.business_id=t.business_id

@@ -8,7 +8,7 @@
 
 - [x] 2.1 Documentar las definiciones de métricas y verificar que cada una tiene un caso con datos conocidos
 - [x] 2.2 Implementar el cálculo con consultas agregadas e índices y verificar con una prueba con datos sembrados
-- [ ] 2.3 Verificar el rendimiento con el volumen de referencia y registrar el tiempo de carga
+- [x] 2.3 Verificar el rendimiento con el volumen de referencia y registrar el tiempo de carga
 
 ## 3. Inicio (admin-dashboard)
 
